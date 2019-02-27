@@ -27,6 +27,11 @@
 
 #include "internal.h"
 
+#if defined(CONFIG_MTK_AEE_FEATURE) && \
+	defined(CONFIG_MTK_FD_LEAK_SPECIFIC_DEBUG)
+#include <mt-plat/aee.h>
+#endif
+
 /*
  * The max size that a non-root user is allowed to grow the pipe. Can
  * be set by root in /proc/sys/fs/pipe-max-size
