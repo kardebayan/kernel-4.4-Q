@@ -47,6 +47,8 @@ int entropy_thread(void *arg)
 	uint8_t *ptr;
 
 	ptr = kmalloc(NDBG_REE_ENTROPY_SZ, GFP_KERNEL);
+	if (!ptr)
+		return TZ_RESULT_ERROR_OUT_OF_MEMORY;
 	memset(ptr, 0, NDBG_REE_ENTROPY_SZ);
 
 	while (!kthread_should_stop()) {
