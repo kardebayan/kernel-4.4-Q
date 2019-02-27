@@ -1,7 +1,5 @@
 zram-y	:=	zcomp.o zram_drv.o
 
-zram-$(CONFIG_ZRAM_LZ4K_COMPRESS) += zcomp_lz4k.o
-
 obj-$(CONFIG_ZRAM)	+=	zram.o
 
 # zram accelerator implementation

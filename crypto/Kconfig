@@ -1540,11 +1540,12 @@ config CRYPTO_LZO
 	  This is the LZO algorithm.
 
 config CRYPTO_LZ4K
-        tristate "LZ4K compression algorithm"
+	tristate "LZ4K compression algorithm"
 	default n
-        select CRYPTO_ALGAPI
-        help
-          Mediatek's proprietary LZ4K algorithm.
+	select CRYPTO_ALGAPI
+	select LZ4K
+	help
+	  Mediatek's proprietary LZ4K algorithm.
 	  It has better compression ratio than the one in LZO
 	  with less performance degradation.
 

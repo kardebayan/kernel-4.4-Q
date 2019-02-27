@@ -98,7 +98,7 @@ config MTK_ENABLE_GMO
 	bool "Enable/Disable GMO related feautre"
 	default n
 	select CC_OPTIMIZE_FOR_SIZE
-	select ZRAM_LZ4K_COMPRESS
+	select CRYPTO_LZ4K
 	---help---
 	Enable/Disable GMO related feautre
 	Do not use this options in Kernel directly
@@ -110,7 +110,7 @@ config MTK_ENABLE_AGO
 	default n
 	select SWAP
 	select ZRAM
-	select ZRAM_LZ4_COMPRESS
+	select CRYPTO_LZ4
 	select MEMCG
 	select MEMCG_SWAP
 	select HZ_300
