@@ -35,6 +35,7 @@
 struct trusty_irq {
 	struct trusty_irq_state *is;
 	struct hlist_node node;
+	unsigned int phy_irq_num;
 	unsigned int irq;
 	bool percpu;
 	bool enable;
@@ -112,8 +113,8 @@ static void trusty_irq_enable_pending_irqs(struct trusty_irq_state *is,
 			enable_irq(trusty_irq->irq);
 #else
 #ifdef CONFIG_MTK_ENABLE_GENIEZONE
-		if (percpu && (trusty_irq->irq >= IPI_CUSTOM_FIRST &&
-				trusty_irq->irq <= IPI_CUSTOM_LAST))
+		if (percpu && (trusty_irq->phy_irq_num >= IPI_CUSTOM_FIRST &&
+				trusty_irq->phy_irq_num <= IPI_CUSTOM_LAST))
 			smp_cross_call(cpumask_of(smp_processor_id()), trusty_irq->irq);
 		else if (percpu)
 			enable_percpu_irq(trusty_irq->irq, 0);
@@ -440,6 +441,8 @@ static int trusty_irq_init_normal_irq(struct trusty_irq_state *is, int irq)
 	if (!trusty_irq)
 		return -ENOMEM;
 
+	trusty_irq->phy_irq_num = irq;
+
 #ifdef CONFIG_TRUSTY_INTERRUPT_MAP
 	if (spi_node) {
 		struct of_phandle_args oirq;
@@ -517,6 +520,7 @@ static int trusty_irq_init_per_cpu_irq(struct trusty_irq_state *is, int irq)
 
 		trusty_irq->is = is;
 		hlist_add_head(&trusty_irq->node, &irqset->inactive);
+		trusty_irq->phy_irq_num = irq;
 		trusty_irq->irq = irq;
 		trusty_irq->percpu = true;
 		trusty_irq->percpu_ptr = trusty_irq_handler_data;
