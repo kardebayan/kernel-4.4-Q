@@ -214,7 +214,7 @@ static int mtk_mrgrx_awb_pcm_open(struct snd_pcm_substream *substream)
 	struct snd_pcm_runtime *runtime = substream->runtime;
 	int ret = 0;
 
-	pr_debug("%s\n", __func__);
+	pr_aud("%s\n", __func__);
 
 	Mrgrx_AWB_Control_context = Get_Mem_ControlT(Soc_Aud_Digital_Block_MEM_AWB);
 	runtime->hw = mtk_mgrrx_awb_hardware;
@@ -226,7 +226,7 @@ static int mtk_mrgrx_awb_pcm_open(struct snd_pcm_substream *substream)
 	ret = snd_pcm_hw_constraint_integer(runtime, SNDRV_PCM_HW_PARAM_PERIODS);
 
 	if (ret < 0)
-		pr_warn("snd_pcm_hw_constraint_integer failed\n");
+		pr_warn("%s, snd_pcm_hw_constraint_integer failed\n", __func__);
 
 	pr_debug("%s, runtime rate = %d channels = %d\n",
 		__func__, runtime->rate, runtime->channels);

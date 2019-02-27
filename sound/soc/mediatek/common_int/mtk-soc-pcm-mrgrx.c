@@ -197,7 +197,7 @@ static int mtk_pcm_mrgrx_open(struct snd_pcm_substream *substream)
 	int ret = 0;
 
 	AudDrv_Clk_On();
-	pr_debug("%s\n", __func__);
+	pr_aud("%s\n", __func__);
 
 	runtime->hw = mtk_mrgrx_hardware;
 	memcpy((void *)(&(runtime->hw)), (void *)&mtk_mrgrx_hardware,
@@ -207,7 +207,7 @@ static int mtk_pcm_mrgrx_open(struct snd_pcm_substream *substream)
 					 &mrgrx_constraints_sample_rates);
 	ret = snd_pcm_hw_constraint_integer(runtime, SNDRV_PCM_HW_PARAM_PERIODS);
 	if (ret < 0)
-		pr_warn("snd_pcm_hw_constraint_integer failed\n");
+		pr_warn("%s, snd_pcm_hw_constraint_integer failed\n", __func__);
 
 	pr_debug("%s, runtime rate = %d channels = %d substream->pcm->device = %d\n",
 		__func__, runtime->rate, runtime->channels, substream->pcm->device);

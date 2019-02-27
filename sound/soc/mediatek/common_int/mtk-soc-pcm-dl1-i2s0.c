@@ -487,7 +487,7 @@ static int mtk_pcm_i2s0_open(struct snd_pcm_substream *substream)
 	AfeControlSramUnLock();
 	runtime->hw = mtk_i2s0_hardware;
 
-	pr_debug("%s\n", __func__);
+	pr_aud("%s\n", __func__);
 
 	AudDrv_Clk_On();
 	memcpy((void *)(&(runtime->hw)), (void *)&mtk_i2s0_hardware,
@@ -500,7 +500,7 @@ static int mtk_pcm_i2s0_open(struct snd_pcm_substream *substream)
 	ret = snd_pcm_hw_constraint_integer(runtime, SNDRV_PCM_HW_PARAM_PERIODS);
 
 	if (ret < 0)
-		pr_warn("snd_pcm_hw_constraint_integer failed\n");
+		pr_warn("%s, snd_pcm_hw_constraint_integer failed\n", __func__);
 
 	/* print for hw pcm information */
 	pr_debug("%s, runtime rate = %d channels = %d substream->pcm->device = %d\n",

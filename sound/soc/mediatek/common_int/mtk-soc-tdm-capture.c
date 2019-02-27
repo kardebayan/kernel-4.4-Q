@@ -279,7 +279,7 @@ static int mtk_capture_pcm_open(struct snd_pcm_substream *substream)
 
 	AudDrv_Clk_On();
 
-	pr_debug("%s\n", __func__);
+	pr_aud("%s\n", __func__);
 	TDM_VUL_Control_context = Get_Mem_ControlT(Soc_Aud_Digital_Block_MEM_VUL);
 
 	runtime->hw = mtk_capture_hardware;
@@ -290,7 +290,7 @@ static int mtk_capture_pcm_open(struct snd_pcm_substream *substream)
 					 &constraints_sample_rates);
 	ret = snd_pcm_hw_constraint_integer(runtime, SNDRV_PCM_HW_PARAM_PERIODS);
 	if (ret < 0)
-		pr_err("snd_pcm_hw_constraint_integer failed\n");
+		pr_err("%s, snd_pcm_hw_constraint_integer failed\n", __func__);
 
 	pr_debug("%s, runtime hw->rates = 0x%x, rate = %d, channels = %d\n", __func__,
 		 runtime->hw.rates, runtime->rate, runtime->channels);

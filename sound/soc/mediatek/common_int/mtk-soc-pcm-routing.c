@@ -703,7 +703,7 @@ static int Audio_LowLatencyDebug_Set(struct snd_kcontrol *kcontrol,
 static int Audio_AssignDRAM_Get(struct snd_kcontrol *kcontrol,
 				struct snd_ctl_elem_value *ucontrol)
 {
-	pr_debug("%s()\n", __func__);
+	pr_aud("%s()\n", __func__);
 	ucontrol->value.integer.value[0] = 0;
 	return 0;
 }
@@ -713,7 +713,7 @@ static int Audio_AssignDRAM_Set(struct snd_kcontrol *kcontrol,
 {
 	unsigned int value = ucontrol->value.integer.value[0];
 
-	pr_debug("%s(), meminterface %d\n", __func__, value);
+	pr_debug("%s(), mem interface = %d\n", __func__, value);
 	if (value < Soc_Aud_Digital_Block_NUM_OF_MEM_INTERFACE) {
 		struct afe_mem_control_t *pMemControl = Get_Mem_ControlT(value);
 
@@ -830,12 +830,12 @@ static int mtk_routing_pcm_open(struct snd_pcm_substream *substream)
 	struct snd_pcm_runtime *runtime = substream->runtime;
 	int ret = 0;
 
-	pr_warn("mtk_routing_pcm_open\n");
+	pr_aud("mtk_routing_pcm_open\n");
 
 	ret = snd_pcm_hw_constraint_list(runtime, 0, SNDRV_PCM_HW_PARAM_RATE,
 					 &constraints_sample_rates);
 	if (ret < 0)
-		pr_warn("snd_pcm_hw_constraint_integer failed\n");
+		pr_warn("%s, snd_pcm_hw_constraint_integer failed\n", __func__);
 
 	/* print for hw pcm information */
 	pr_warn("mtk_routing_pcm_open runtime rate = %d channels = %d\n", runtime->rate,
