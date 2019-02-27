@@ -35,16 +35,11 @@
 /* #include "mach/mt_gpio.h" */
 
 static struct fm_patch_tbl mt6580_patch_tbl[5] = {
-	{FM_ROM_V1, "/vendor/etc/firmware/mt6580/mt6580_fm_v1_patch.bin",
-	 "/vendor/etc/firmware/mt6580/mt6580_fm_v1_coeff.bin", NULL, NULL},
-	{FM_ROM_V2, "/vendor/etc/firmware/mt6580/mt6580_fm_v2_patch.bin",
-	 "/vendor/etc/firmware/mt6580/mt6580_fm_v2_coeff.bin", NULL, NULL},
-	{FM_ROM_V3, "/vendor/etc/firmware/mt6580/mt6580_fm_v3_patch.bin",
-	 "/vendor/etc/firmware/mt6580/mt6580_fm_v3_coeff.bin", NULL, NULL},
-	{FM_ROM_V4, "/vendor/etc/firmware/mt6580/mt6580_fm_v4_patch.bin",
-	 "/vendor/etc/firmware/mt6580/mt6580_fm_v4_coeff.bin", NULL, NULL},
-	{FM_ROM_V5, "/vendor/etc/firmware/mt6580/mt6580_fm_v5_patch.bin",
-	 "/vendor/etc/firmware/mt6580/mt6580_fm_v5_coeff.bin", NULL, NULL},
+	{FM_ROM_V1, "mt6580_fm_v1_patch.bin", "mt6580_fm_v1_coeff.bin", NULL, NULL},
+	{FM_ROM_V2, "mt6580_fm_v2_patch.bin", "mt6580_fm_v2_coeff.bin", NULL, NULL},
+	{FM_ROM_V3, "mt6580_fm_v3_patch.bin", "mt6580_fm_v3_coeff.bin", NULL, NULL},
+	{FM_ROM_V4, "mt6580_fm_v4_patch.bin", "mt6580_fm_v4_coeff.bin", NULL, NULL},
+	{FM_ROM_V5, "mt6580_fm_v5_patch.bin", "mt6580_fm_v5_coeff.bin", NULL, NULL}
 };
 
 static struct fm_hw_info mt6580_hw_info = {
@@ -180,17 +175,17 @@ static fm_s32 mt6580_Mute(fm_bool mute)
 	fm_u16 dataRead;
 
 	WCN_DBG(FM_DBG | CHIP, "set %s\n", mute ? "mute" : "unmute");
-	/* mt6580_read(FM_MAIN_CTRL, &dataRead); */
+	/* fm_reg_read(FM_MAIN_CTRL, &dataRead); */
 	fm_reg_read(0x9C, &dataRead);
 
-	/* mt6580_top_write(0x0050,0x00000007); */
+	/* fm_top_reg_write(0x0050,0x00000007); */
 
 	if (mute == 1)
 		ret = fm_reg_write(0x9C, (dataRead & 0xFFFC) | 0x0003);
 	else
 		ret = fm_reg_write(0x9C, (dataRead & 0xFFFC));
 
-	/* mt6580_top_write(0x0050,0x0000000F); */
+	/* fm_top_reg_write(0x0050,0x0000000F); */
 
 	return ret;
 }
@@ -775,8 +770,6 @@ static fm_s32 mt6580_pwrup_DSP_download(struct fm_patch_tbl *patch_tbl)
 {
 #define PATCH_BUF_SIZE (4096*6)
 	fm_s32 ret = 0;
-	const fm_s8 *path_patch = NULL;
-	const fm_s8 *path_coeff = NULL;
 	fm_s32 patch_len = 0;
 	fm_u8 *dsp_buf = NULL;
 	fm_u16 tmp_reg = 0;
@@ -803,24 +796,25 @@ static fm_s32 mt6580_pwrup_DSP_download(struct fm_patch_tbl *patch_tbl)
 		return -ENOMEM;
 	}
 
-	ret = fm_get_patch_path(mt6580_hw_info.rom_ver, &path_patch, patch_tbl);
-	if (ret) {
+	patch_len = fm_get_patch_path(mt6580_hw_info.rom_ver, dsp_buf, PATCH_BUF_SIZE, patch_tbl);
+	if (patch_len <= 0) {
 		WCN_DBG(FM_ALT | CHIP, " fm_get_patch_path failed\n");
+		ret = patch_len;
 		goto out;
 	}
-	patch_len = fm_file_read(path_patch, dsp_buf, PATCH_BUF_SIZE, 0);
+
 	ret = fm_download_patch((const fm_u8 *)dsp_buf, patch_len, IMG_PATCH);
 	if (ret) {
 		WCN_DBG(FM_ALT | CHIP, " DL DSPpatch failed\n");
 		goto out;
 	}
 
-	ret = fm_get_coeff_path(mt6580_hw_info.rom_ver, &path_coeff, patch_tbl);
-	if (ret) {
+	patch_len = fm_get_coeff_path(mt6580_hw_info.rom_ver, dsp_buf, PATCH_BUF_SIZE, patch_tbl);
+	if (patch_len <= 0) {
 		WCN_DBG(FM_ALT | CHIP, " fm_get_coeff_path failed\n");
+		ret = patch_len;
 		goto out;
 	}
-	patch_len = fm_file_read(path_coeff, dsp_buf, PATCH_BUF_SIZE, 0);
 
 	mt6580_hw_info.rom_ver += 1;
 
