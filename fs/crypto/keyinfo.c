@@ -373,9 +373,13 @@ int fscrypt_get_encryption_info(struct inode *inode)
 	if (!raw_key)
 		goto out;
 
-	res = find_and_derive_key(inode, &ctx, raw_key, mode->keysize);
+	res = find_and_derive_key(inode, &ctx, raw_key, mode->keysize, crypt_info);
 	if (res)
 		goto out;
+
+	if (S_ISREG(inode->i_mode) &&
+		crypt_info->ci_data_mode == FS_ENCRYPTION_MODE_PRIVATE)
+		goto hw_encrypt_out;
 
 	ctfm = crypto_alloc_skcipher(mode->cipher_str, 0, 0);
 	if (IS_ERR(ctfm)) {
