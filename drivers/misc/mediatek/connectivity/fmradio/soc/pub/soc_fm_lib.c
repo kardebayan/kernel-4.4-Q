@@ -29,17 +29,17 @@
 #include "fm_config.h"
 #include "fm_cmd.h"
 
-#include "mt6580_fm_reg.h"
-#include "mt6580_fm_lib.h"
+#include "soc_fm_reg.h"
+#include "soc_fm_lib.h"
 
 /* #include "mach/mt_gpio.h" */
 
 static struct fm_patch_tbl mt6580_patch_tbl[5] = {
-	{FM_ROM_V1, "mt6580_fm_v1_patch.bin", "mt6580_fm_v1_coeff.bin", NULL, NULL},
-	{FM_ROM_V2, "mt6580_fm_v2_patch.bin", "mt6580_fm_v2_coeff.bin", NULL, NULL},
-	{FM_ROM_V3, "mt6580_fm_v3_patch.bin", "mt6580_fm_v3_coeff.bin", NULL, NULL},
-	{FM_ROM_V4, "mt6580_fm_v4_patch.bin", "mt6580_fm_v4_coeff.bin", NULL, NULL},
-	{FM_ROM_V5, "mt6580_fm_v5_patch.bin", "mt6580_fm_v5_coeff.bin", NULL, NULL}
+	{FM_ROM_V1, "soc_fm_v1_patch.bin", "soc_fm_v1_coeff.bin", NULL, NULL},
+	{FM_ROM_V2, "soc_fm_v2_patch.bin", "soc_fm_v2_coeff.bin", NULL, NULL},
+	{FM_ROM_V3, "soc_fm_v3_patch.bin", "soc_fm_v3_coeff.bin", NULL, NULL},
+	{FM_ROM_V4, "soc_fm_v4_patch.bin", "soc_fm_v4_coeff.bin", NULL, NULL},
+	{FM_ROM_V5, "soc_fm_v5_patch.bin", "soc_fm_v5_coeff.bin", NULL, NULL}
 };
 
 static struct fm_hw_info mt6580_hw_info = {
@@ -103,7 +103,7 @@ static signed int mt6580_top_set_bits(unsigned short addr, unsigned int bits, un
 	ret = fm_top_reg_read(addr, &val);
 
 	if (ret)
-	return ret;
+		return ret;
 
 	val = ((val & (mask)) | bits);
 	ret = fm_top_reg_write(addr, val);
@@ -208,13 +208,13 @@ static signed int mt6580_set_RSSITh(unsigned short TH_long, unsigned short TH_sh
 static signed int mt6580_set_SMGTh(signed int ver, unsigned short TH_smg)
 {
 	if (mt6580_E1 == ver) {
-	fm_reg_write(0xE2, 0x321E);
-	fm_reg_write(0xE3, TH_smg);
-	fm_reg_write(0xE1, 0x0002);
+		fm_reg_write(0xE2, 0x321E);
+		fm_reg_write(0xE3, TH_smg);
+		fm_reg_write(0xE1, 0x0002);
 	} else {
-	fm_reg_write(0xE2, 0x3218);
-	fm_reg_write(0xE3, TH_smg);
-	fm_reg_write(0xE1, 0x0002);
+		fm_reg_write(0xE2, 0x3218);
+		fm_reg_write(0xE3, TH_smg);
+		fm_reg_write(0xE1, 0x0002);
 	}
 
 	WCN_DBG(FM_DBG | CHIP, "Soft-mute gain TH %d\n", (int)TH_smg);
