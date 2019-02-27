@@ -456,6 +456,7 @@ CONFIG_MTK_EMMC_CQ_SUPPORT,PROJECT,sophie.wang,new config in this commit ce3bff2
 CONFIG_MTK_EMMC_SUPPORT_OTP,PROJECT,weiping.zhang,,,,,,,,,,,
 CONFIG_MTK_EMMC_SUPPORT,PROJECT,weiping.zhang,,,,,,,,,,,
 CONFIG_MTK_ENABLE_GENIEZONE,PROJECT,coboy.chen,,,,,,,,,,,
+CONFIG_MTK_NEBULA_VM_SUPPORT,PROJECT,coboy.chen,,,,,,,,,,,
 CONFIG_MTK_ENABLE_MD2,COMMON,yanbin.ren,new config in this commit 9715b038cd89c33b3acb9a75a29652347cccc65c,X,X,X,X,X,X,X,X,X,X
 CONFIG_MTK_ENG_BUILD,USER,,,X,X,X,X,X,X,X,X,X,X
 CONFIG_MTK_EXTBUCK,PROJECT,vend_jeff_chang001,,X,X,X,,,,,,,
