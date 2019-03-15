@@ -196,6 +196,7 @@ static char *kicker_name[] = {
 	"KIR_THERMAL",
 	"KIR_FB",
 	"KIR_FBT",
+	"KIR_BOOTUP",
 	"NUM_KICKER",
 
 	"KIR_LATE_INIT",
@@ -408,6 +409,7 @@ int vcorefs_get_dvfs_kicker_group(int kicker)
 	case KIR_THERMAL:
 	case KIR_FB:
 	case KIR_FBT:
+	case KIR_BOOTUP:
 	default:
 		group = KIR_GROUP_HPM;
 	break;
