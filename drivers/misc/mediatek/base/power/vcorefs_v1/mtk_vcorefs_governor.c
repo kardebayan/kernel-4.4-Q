@@ -207,6 +207,32 @@ static char *kicker_name[] = {
 	"LAST_KICKER",
 };
 
+int bootup_kicker_init_opp = OPPI_ULTRA_LOW_PWR;
+
+int vcorefs_bootup_get_init_opp(void)
+{
+	return bootup_kicker_init_opp;
+}
+
+void vcorefs_bootup_set_init_opp(int opp)
+{
+	vcorefs_info("bootup_set_init_opp(%d)\n", opp);
+	bootup_kicker_init_opp = opp;
+}
+bool vcorefs_request_init_opp(int kicker, int opp)
+{
+	bool accept = false;
+
+	mutex_lock(&governor_mutex);
+	if (kicker == KIR_BOOTUP) {
+		bootup_kicker_init_opp = opp;
+		vcorefs_crit_mask(log_mask(), kicker, "init_opp request(kr:%d, opp:%d)\n", kicker, opp);
+		accept = true;
+	}
+	mutex_unlock(&governor_mutex);
+	return accept;
+}
+
 /*
  * set vcore cmd
  */
