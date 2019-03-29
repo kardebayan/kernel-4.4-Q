@@ -502,7 +502,7 @@ CONFIG_MTK_GPS_EMI,PROJECT,Heiping.Lei,new config in this commit 89e353c38891333
 CONFIG_MTK_GPS_REGISTER_SETTING,PROJECT,Heiping.Lei,new config in this commit bfc2f2ac84b4e959639353664279a181d4b095d8,,,,,,,,,,
 CONFIG_MTK_GPS_SUPPORT,PROJECT,Heiping.Lei,,,,,,,,,,,
 CONFIG_MTK_GPT_SCHEME_SUPPORT,PROJECT,jimin.wang,,,,,,,,,,,
-CONFIG_MTK_GPU_COMMON_DVFS_SUPPORT,PLATFORM,Yu-fu.Kao,,y,y,y,y,y,y,y,y,y,y
+CONFIG_MTK_GPU_COMMON_DVFS_SUPPORT,PROJECT,Yu-fu.Kao,,y,y,y,y,y,y,y,y,y,y
 CONFIG_MTK_GPU_SPM_DVFS_SUPPORT,COMMON,yu-fu.kao,new config in this commit 25c58375709ade9927b8c1efdd93b182c51a2d88,X,X,X,X,X,X,X,X,X,X
 CONFIG_MTK_GPU_SUPPORT,PROJECT,victor.hsu,,,,,,,,,,,
 CONFIG_MTK_GPU_VERSION,PROJECT,Yu-fu.Kao,type PROJECT should be PLATFORM,,,,,,,,,,
