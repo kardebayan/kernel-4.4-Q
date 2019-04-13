@@ -90,11 +90,8 @@ ifeq ($(platformdir_exists), y)
 obj-y += $(subst ",,$(CONFIG_MTK_PLATFORM))/
 endif
 
-ifneq (,$(filter $(CONFIG_MTK_PLATFORM), "mt6739"))
-ccflags-y += -DCMDQ_DISP_DSI_DEBUG
-endif
-
 ifeq ($(or $(strip $(CONFIG_MTK_SEC_VIDEO_PATH_SUPPORT)), $(strip $(CONFIG_MTK_CAM_SECURITY_SUPPORT))),y)
+
 ifeq ($(strip $(CONFIG_MTK_TEE_GP_SUPPORT)),y)
 obj-y += cmdq_sec_gp.o
 else ifeq ($(CONFIG_TRUSTONIC_TEE_SUPPORT),y)
