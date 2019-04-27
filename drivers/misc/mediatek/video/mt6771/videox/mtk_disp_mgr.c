@@ -1148,6 +1148,10 @@ int _ioctl_get_display_caps(unsigned long arg)
 	if (disp_helper_get_option(DISP_OPT_RPO))
 		caps_info.disp_feature |= DISP_FEATURE_RPO;
 
+	/* add read HW config to decide enable AOD or not */
+	if (disp_helper_get_option(DISP_OPT_AOD) == 0)
+		caps_info.disp_feature |= DISP_FEATURE_FORCE_DISABLE_AOD;
+
 	if (disp_helper_get_option(DISP_OPT_RSZ) ||
 	    disp_helper_get_option(DISP_OPT_RPO)) {
 		caps_info.rsz_in_max[0] = RSZ_TILE_LENGTH -
