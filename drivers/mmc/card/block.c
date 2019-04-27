@@ -1053,6 +1053,7 @@ static int mmc_blk_ioctl_cmd(struct block_device *bdev,
 	int err = 0, ioc_err = 0;
 #ifdef CONFIG_MTK_EMMC_CQ_SUPPORT
 	u8 cmdq_en = 0;
+	struct mmc_blk_data *main_md;
 #endif
 #ifdef CONFIG_MTK_EMMC_SUPPORT_OTP
 	int otp_dev;
@@ -1099,7 +1100,7 @@ static int mmc_blk_ioctl_cmd(struct block_device *bdev,
 	if (cmdq_en) {
 		err = mmc_blk_cmdq_switch(card, 0);
 		if (err) {
-			pr_err("%s, %s: disable cmdq error %d\n",
+			pr_notice("%s, %s: disable cmdq error %d\n",
 				__func__, mmc_hostname(card->host), err);
 			mmc_put_card(card);
 			goto cmd_done;
@@ -1111,10 +1112,11 @@ static int mmc_blk_ioctl_cmd(struct block_device *bdev,
 
 #ifdef CONFIG_MTK_EMMC_CQ_SUPPORT
 	if (cmdq_en) {
-		err = mmc_blk_cmdq_switch(card, 1);
-		if (err)
-			pr_err("%s, %s: enable cmdq error %d\n",
-				__func__, mmc_hostname(card->host), err);
+		main_md = dev_get_drvdata(&card->dev);
+		if (main_md->part_curr <= PART_CMDQ_EN)
+			if (mmc_blk_cmdq_switch(card, 1))
+				pr_notice("%s, %s: enable cmdq error %d\n",
+					__func__, mmc_hostname(card->host), err);
 	}
 #endif
 
@@ -1204,7 +1206,7 @@ static int mmc_blk_ioctl_multi_cmd(struct block_device *bdev,
 #ifdef CONFIG_MTK_EMMC_CQ_SUPPORT
 	if (cmdq_en) {
 		main_md = dev_get_drvdata(&card->dev);
-		if  (main_md->part_curr <= PART_CMDQ_EN)
+		if (main_md->part_curr <= PART_CMDQ_EN)
 			if (mmc_blk_cmdq_switch(card, 1))
 				pr_notice("MMC ioctl: %s re-enable CQ err %d\n",
 					mmc_hostname(card->host), err);
