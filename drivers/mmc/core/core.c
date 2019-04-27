@@ -639,6 +639,7 @@ void mmc_wait_cmdq_done(struct mmc_request *mrq)
 	struct mmc_host *host = mrq->host;
 	struct mmc_command *cmd = mrq->cmd;
 	int done = 0, task_id;
+	static unsigned long not_ready_time;
 
 	if (cmd->opcode == MMC_SEND_STATUS ||
 		cmd->opcode == MMC_STOP_TRANSMISSION ||
@@ -685,8 +686,23 @@ void mmc_wait_cmdq_done(struct mmc_request *mrq)
 		int i = 0;
 		unsigned int resp = cmd->resp[0];
 
-		if (resp == 0)
+		if (resp == 0) {
+			if (!not_ready_time)
+				not_ready_time = jiffies;
+			else if (time_after(jiffies, not_ready_time
+				+ msecs_to_jiffies(30 * 1000))) {
+				/* no task ready for over 30 sec */
+				pr_notice("mmc0: error: task not ready over 30s\n");
+				msleep(2000);
+
+				/* reset device */
+				mmc_reset_cq(host);
+				not_ready_time = 0;
+			}
 			goto request_end;
+		}
+
+		not_ready_time = 0;
 
 		do {
 			if ((resp & 1) && (!host->data_mrq_queued[i])) {
