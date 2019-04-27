@@ -317,6 +317,17 @@ int emmc_rpmb_switch(struct mmc_card *card, struct emmc_rpmb_blk_data *md)
 		card->ext_csd.part_config = part_config;
 	}
 
+#ifdef CONFIG_MTK_EMMC_CQ_SUPPORT
+	/* enable cmdq at user partition */
+	if (!card->ext_csd.cmdq_mode_en &&
+		md->part_type == 0) {
+		ret = mmc_blk_cmdq_switch(card, 1);
+		if (ret)
+			pr_notice("%s enable CMDQ error %d\n",
+					mmc_hostname(card->host), ret);
+	}
+#endif
+
 	main_md->part_curr = md->part_type;
 	return 0;
 }
@@ -494,6 +505,11 @@ int emmc_rpmb_req_handle(struct mmc_card *card, struct emmc_rpmb_req *rpmb_req)
 	/* MSG(INFO, "%s end.\n", __func__);    */
 
 error:
+	ret = emmc_rpmb_switch(card, dev_get_drvdata(&card->dev));
+	if (ret)
+		MSG(ERR, "%s emmc_rpmb_switch main failed. (%x)\n",
+			__func__, ret);
+
 	mmc_release_host(card->host);
 
 	rpmb_dump_frame(rpmb_req->data_frame);
