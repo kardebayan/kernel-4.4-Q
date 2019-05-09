@@ -438,7 +438,7 @@ int imgsensor_set_driver(struct IMGSENSOR_SENSOR *psensor)
 #define TOSTRING(value)           #value
 #define STRINGIZE(stringizedName) TOSTRING(stringizedName)
 
-	char *psensor_list_with_end = NULL;
+	char *psensor_list_with_end = NULL, *psensor_list = NULL;
 	char *sensor_kconfig = STRINGIZE(CONFIG_CUSTOM_KERNEL_IMGSENSOR);
 
 	static int orderedSearchList[MAX_NUM_OF_SUPPORT_SENSOR] = {-1};
@@ -456,7 +456,7 @@ int imgsensor_set_driver(struct IMGSENSOR_SENSOR *psensor)
 
 
 	if (get_search_list) {
-		psensor_list_with_end = kmalloc(strlen(sensor_kconfig)-1, GFP_KERNEL);
+		psensor_list = psensor_list_with_end = kmalloc(strlen(sensor_kconfig)-1, GFP_KERNEL);
 	}
 	if (psensor_list_with_end != NULL) {
 		for (j = 0; j < MAX_NUM_OF_SUPPORT_SENSOR; j++)
@@ -484,7 +484,7 @@ int imgsensor_set_driver(struct IMGSENSOR_SENSOR *psensor)
 			driver_name = strsep(&psensor_list_with_end, " \0");
 		}
 		get_search_list = false;
-		kfree(psensor_list_with_end);
+		kfree(psensor_list);
 	}
 
 
