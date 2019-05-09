@@ -1034,7 +1034,7 @@ void show_native_bt_by_pid(int task_pid)
 				tid = task_pid_vnr(t);
 				state = t->state ? __ffs(t->state) + 1 : 0;
 				pr_info("%s sysTid=%d, pid=%d\n", t->comm, tid, task_pid);
-				DumpThreadNativeInfo_By_tid_log(tid);	/* catch user-space bt */
+				DumpThreadNativeInfo_By_tid_log(tid, t);
 				put_task_stack(t);
 				put_task_struct(t);
 			}
