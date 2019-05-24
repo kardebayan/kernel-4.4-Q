@@ -1675,6 +1675,16 @@ static int ufshcd_compose_upiu(struct ufs_hba *hba, struct ufshcd_lrb *lrbp)
 	return ret;
 }
 
+static int ufshcd_get_qcmd_permission(struct ufs_hba *hba, u64 lun)
+{
+	/* let requests for well known device lun to go through */
+	if (ufshcd_scsi_to_upiu_lun(lun) == UFS_UPIU_UFS_DEVICE_WLUN)
+		return 0;
+	else if (ufshcd_is_shutdown_ongoing(hba))
+		return -EPERM;
+	return 0;
+}
+
 /**
  * ufshcd_queuecommand - main entry point for SCSI requests
  * @cmd: command from SCSI Midlayer
@@ -1710,15 +1720,16 @@ static int ufshcd_queuecommand(struct Scsi_Host *host, struct scsi_cmnd *cmd)
 		goto out;
 	}
 
-	if (ufshcd_is_shutdown_ongoing(hba) &&
-		(cmd->cmnd[0] != START_STOP)) {
+	err = ufshcd_get_qcmd_permission(hba, cmd->device->lun);
+	if (unlikely(err)) {
+		set_host_byte(cmd, DID_ERROR);
+		cmd->scsi_done(cmd);
+
 		dev_info(hba->dev,
 			"%s: UFS is shutdown, cmd=0x%x ",
 			__func__, cmd->cmnd[0]);
 
-		set_host_byte(cmd, DID_ERROR);
-		cmd->scsi_done(cmd);
-
+		err = 0;
 		goto out;
 	}
 
