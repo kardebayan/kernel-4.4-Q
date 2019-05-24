@@ -55,7 +55,7 @@ static void moving_average_filter(struct moving_average *filter,
 	uint64_t base_time, uint64_t archcounter_time)
 {
 	int i = 0;
-	int32_t avg;
+	int64_t avg = 0;
 	int64_t ret_avg = 0;
 
 	if (base_time < filter->last_time + FILTER_FREQ)
@@ -69,7 +69,7 @@ static void moving_average_filter(struct moving_average *filter,
 		filter->cnt++;
 
 	for (i = 1, avg = 0; i < filter->cnt; i++)
-		avg += (int32_t)(filter->input[i] - filter->input[0]);
+		avg += (filter->input[i] - filter->input[0]);
 	ret_avg = (avg / filter->cnt) + filter->input[0];
 	WRITE_ONCE(filter->output, ret_avg);
 }
