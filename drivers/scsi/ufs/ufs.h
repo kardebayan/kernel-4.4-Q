@@ -46,7 +46,6 @@
 #define QUERY_DESC_HDR_SIZE       2
 #define QUERY_OSF_SIZE            (GENERAL_UPIU_REQUEST_SIZE - \
 					(sizeof(struct utp_upiu_header)))
-#define RESPONSE_UPIU_SENSE_DATA_LENGTH	18
 
 #define UPIU_HEADER_DWORD(byte3, byte2, byte1, byte0)\
 			cpu_to_be32((byte3 << 24) | (byte2 << 16) |\
@@ -444,7 +443,7 @@ struct utp_cmd_rsp {
 	__be32 residual_transfer_count;
 	__be32 reserved[4];
 	__be16 sense_data_len;
-	u8 sense_data[RESPONSE_UPIU_SENSE_DATA_LENGTH];
+	u8 sense_data[18];
 };
 
 /**
@@ -536,11 +535,21 @@ struct ufs_vreg {
 	int max_uA;
 };
 
+enum ufs_vreg_state {
+	UFS_REG_HBA_INIT,
+	UFS_REG_HBA_EXIT,
+	UFS_REG_SUSPEND_SET_LPM,
+	UFS_REG_SUSPEND_SET_HPM,
+	UFS_REG_RESUME_SET_LPM,
+	UFS_REG_RESUME_SET_HPM,
+};
+
 struct ufs_vreg_info {
 	struct ufs_vreg *vcc;
 	struct ufs_vreg *vccq;
 	struct ufs_vreg *vccq2;
 	struct ufs_vreg *vdd_hba;
+	enum ufs_vreg_state state;
 };
 
 struct ufs_dev_info {
