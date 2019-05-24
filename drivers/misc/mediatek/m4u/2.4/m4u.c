@@ -101,10 +101,11 @@ static int m4u_buf_show(void *priv, unsigned int mva_start, unsigned int mva_end
 {
 	struct m4u_buf_info_t *pMvaInfo = priv;
 
-	M4U_PRINT_LOG_OR_SEQ(data, "0x%-8x, 0x%-8x, 0x%lx, 0x%-8x, 0x%x, %s, 0x%x, 0x%x, 0x%x\n",
+	M4U_PRINT_LOG_OR_SEQ(data, "0x%-8x, 0x%-8x, 0x%lx, 0x%-8x, 0x%x, %s, 0x%x, 0x%x, 0x%x, %llu ns\n",
 			pMvaInfo->mva, pMvaInfo->mva+pMvaInfo->size-1, pMvaInfo->va,
 			pMvaInfo->size, pMvaInfo->prot, m4u_get_port_name(pMvaInfo->port),
-			     pMvaInfo->flags, mva_start, mva_end);
+			pMvaInfo->flags, mva_start, mva_end,
+			pMvaInfo->current_ts);
 
 	return 0;
 }
@@ -115,7 +116,7 @@ int m4u_dump_buf_info(struct seq_file *seq)
 
 	M4U_PRINT_LOG_OR_SEQ(seq, "\ndump mva allocated info ========>\n");
 	M4U_PRINT_LOG_OR_SEQ(seq,
-	"mva_start   mva_end          va       size     prot   module   flags   debug1  debug2\n");
+	"mva_start   mva_end          va       size     prot   module   flags   debug1  debug2  ts\n");
 
 	mva_foreach_priv((void *) m4u_buf_show, seq);
 
@@ -716,6 +717,12 @@ int m4u_alloc_mva(m4u_client_t *client, M4U_PORT_ID port,
 		m4u_dump_buf_info(NULL);
 		ret = -EINVAL;
 		goto err1;
+	} else if (mva == 1) {
+		M4UMSG("fix mva fail: mva:0x%x, module:%s, size:%d\n",
+				*pMva, m4u_get_port_name(port), size);
+		m4u_dump_buf_info(NULL);
+		ret = -EINVAL;
+		goto err1;
 	} else
 		M4ULOG_LOW("%s,mva = 0x%x\n", __func__, mva);
 
@@ -734,6 +741,7 @@ int m4u_alloc_mva(m4u_client_t *client, M4U_PORT_ID port,
 	pMvaInfo->mva = mva;
 	pMvaInfo->mva_align = mva_align;
 	pMvaInfo->size_align = size_align;
+	pMvaInfo->current_ts = sched_clock();
 	*pMva = mva;
 
 	if (flags & M4U_FLAGS_SEQ_ACCESS)
@@ -1678,7 +1686,7 @@ int m4u_sec_init(void)
 	M4UINFO("tz_m4u: open DCI session returned: %d\n", mcRet);
 
 	{
-		volatile int i, j;
+		int i, j = 0;
 
 		for (i = 0; i < 10000000; i++)
 			j++;
@@ -2516,10 +2524,12 @@ static int m4u_probe(struct platform_device *pdev)
 			if (pMvaInfo != NULL) {
 				pMvaInfo->port = M4U_PORT_UNKNOWN;
 				pMvaInfo->size = M4U_NONSEC_MVA_START - 0x100000;
+				mva = m4u_do_mva_alloc(0, M4U_NONSEC_MVA_START - 0x100000, pMvaInfo);
+				M4UINFO("reserve sec mva: 0x%x\n", mva);
+			} else {
+				M4UINFO(
+					"pMvaInfo is NULL,secure mva space reserve fail\n");
 			}
-
-			mva = m4u_do_mva_alloc(0, M4U_NONSEC_MVA_START - 0x100000, pMvaInfo);
-			M4UINFO("reserve sec mva: 0x%x\n", mva);
 		}
 #endif
 
