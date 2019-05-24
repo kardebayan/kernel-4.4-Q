@@ -168,6 +168,7 @@ config MACH_MT6771
 	select ARM_AMBA
 	select CPU_V7
 	select HAVE_SMP
+	select HIE
 	select IRQ_DOMAIN
 	select IRQ_DOMAIN_DEBUG
 	select GENERIC_SCHED_CLOCK
