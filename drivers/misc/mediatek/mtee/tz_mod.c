@@ -281,7 +281,7 @@ static long _map_user_pages(struct MTIOMMU_PIN_RANGE_T *pinRange,
 		return -ENOMEM;
 
 	pinRange->pageArray = (void *) pages;
-	write = (control == 0) ? 1 : 0;
+	write = (control == 0) ? FOLL_WRITE : 0;
 
 	/* Try to fault in all of the necessary pages */
 	down_read(&current->mm->mmap_sem);
@@ -294,13 +294,10 @@ static long _map_user_pages(struct MTIOMMU_PIN_RANGE_T *pinRange,
 		pinRange->isPage = 1;
 #if defined(CONFIG_MTEE_CMA_SECURE_MEMORY)
 		res = get_user_pages_durable(current, current->mm,
-					uaddr, nr_pages,
-					write, 0,/* don't force */
-					pages, NULL);
+					uaddr, nr_pages, write, pages, NULL);
 #else
 		res = get_user_pages(current, current->mm, uaddr, nr_pages,
-					write, 0,/* don't force */
-					pages, NULL);
+					write, pages, NULL);
 #endif
 	} else {
 		/* pfn mapped memory, don't touch page struct.
