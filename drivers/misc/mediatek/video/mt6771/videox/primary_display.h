@@ -270,6 +270,7 @@ struct display_primary_path_context {
 	int request_fps;
 #endif
 	enum mtkfb_power_mode pm;
+	enum mtkfb_power_mode prev_pm;
 	enum lcm_power_state lcm_ps;
 };
 

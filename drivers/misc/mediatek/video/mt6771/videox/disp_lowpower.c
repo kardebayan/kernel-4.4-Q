@@ -88,6 +88,7 @@ static atomic_t ext_idlemgr_task_wakeup = ATOMIC_INIT(1);
 #ifdef MTK_FB_MMDVFS_SUPPORT
 /* dvfs */
 static atomic_t dvfs_ovl_req_status = ATOMIC_INIT(HRT_LEVEL_LEVEL0);
+static int dvfs_before_idle = HRT_LEVEL_NUM - 1;
 #endif
 static int register_share_sram;
 
@@ -469,6 +470,8 @@ void _release_wrot_resource_nolock(enum CMDQ_EVENT_ENUM resourceEvent)
 	} else
 		atomic_set(&wrot_sram_available, 0);
 
+	mmprofile_log_ex(ddp_mmp_get_events()->share_sram, MMPROFILE_FLAG_PULSE, 239, 21);
+
 	/* 1.create and reset cmdq */
 	cmdqRecCreate(CMDQ_SCENARIO_PRIMARY_DISP, &handle);
 	cmdqRecReset(handle);
@@ -498,6 +501,8 @@ void _release_wrot_resource_nolock(enum CMDQ_EVENT_ENUM resourceEvent)
 	/* 4.release share sram resourceEvent*/
 	cmdqRecReleaseResource(handle, resourceEvent);
 
+	mmprofile_log_ex(ddp_mmp_get_events()->share_sram, MMPROFILE_FLAG_PULSE, 239, 22);
+
 	/* set rdma golden setting parameters*/
 	set_share_sram(0);
 
@@ -515,6 +520,8 @@ static int32_t _release_wrot_resource(enum CMDQ_EVENT_ENUM resourceEvent)
 	mmprofile_log_ex(ddp_mmp_get_events()->share_sram, MMPROFILE_FLAG_PULSE, 239, 2);
 	/* need lock  */
 	primary_display_manual_lock();
+
+	mmprofile_log_ex(ddp_mmp_get_events()->share_sram, MMPROFILE_FLAG_PULSE, 239, 20);
 
 	if (!register_share_sram) {
 		/*DISPMSG("warning:mdp release wrot_resource after unregister the callback!\n");*/
@@ -962,6 +969,7 @@ void _cmd_mode_leave_idle(void)
 	mmprofile_log_ex(ddp_mmp_get_events()->primary_pm_qos, MMPROFILE_FLAG_END,
 			 !primary_display_is_decouple_mode(), bandwidth);
 #endif
+	primary_display_request_dvfs_perf(SMI_BWC_SCEN_UI_IDLE, dvfs_before_idle);
 }
 
 void primary_display_idlemgr_enter_idle_nolock(void)
@@ -1018,7 +1026,8 @@ int primary_display_request_dvfs_perf(int scenario, int req)
 
 #ifdef CONFIG_MTK_QOS_SUPPORT
 		emi_opp =
-		    (opp_level >= HRT_OPP_LEVEL_DEFAULT) ? PM_QOS_EMI_OPP_DEFAULT_VALUE : opp_level;
+		    (opp_level >= HRT_OPP_LEVEL_DEFAULT) ? PM_QOS_EMI_OPP_DEFAULT_VALUE :
+		    layering_rule_get_emi_freq_table(opp_level);
 		mm_freq =
 		    (opp_level >= HRT_OPP_LEVEL_DEFAULT) ? PM_QOS_MM_FREQ_DEFAULT_VALUE :
 		    layering_rule_get_mm_freq_table(opp_level);
@@ -1095,6 +1104,7 @@ static int _primary_path_idlemgr_monitor_thread(void *data)
 			primary_display_set_idle_stat(1);
 		}
 #ifdef MTK_FB_MMDVFS_SUPPORT
+		dvfs_before_idle = atomic_read(&dvfs_ovl_req_status);
 		/* when screen idle: LP4 enter ULPM; LP3 enter LPM */
 		primary_display_request_dvfs_perf(SMI_BWC_SCEN_UI_IDLE, HRT_LEVEL_LEVEL0);
 #endif
@@ -1103,10 +1113,6 @@ static int _primary_path_idlemgr_monitor_thread(void *data)
 
 		wait_event_interruptible(idlemgr_pgc->idlemgr_wait_queue, !primary_display_is_idle());
 
-#ifdef MTK_FB_MMDVFS_SUPPORT
-		/* when leave screen idle: reset to default */
-		primary_display_request_dvfs_perf(SMI_BWC_SCEN_UI_IDLE, HRT_LEVEL_DEFAULT);
-#endif
 		if (kthread_should_stop())
 			break;
 	}

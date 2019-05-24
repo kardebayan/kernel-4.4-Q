@@ -439,12 +439,10 @@ static enum DISP_POWER_STATE primary_set_state(enum DISP_POWER_STATE new_state)
 /* AOD power mode API */
 enum mtkfb_power_mode primary_display_set_power_mode_nolock(enum mtkfb_power_mode new_mode)
 {
-	enum mtkfb_power_mode prev_mode;
-
-	prev_mode = pgc->pm;
+	pgc->prev_pm = pgc->pm;
 	pgc->pm = new_mode;
 
-	return prev_mode;
+	return pgc->prev_pm;
 }
 
 enum mtkfb_power_mode primary_display_set_power_mode(enum mtkfb_power_mode new_mode)
@@ -472,6 +470,11 @@ enum mtkfb_power_mode primary_display_get_power_mode(void)
 	_primary_path_unlock(__func__);
 
 	return mode;
+}
+
+enum mtkfb_power_mode primary_display_get_prev_power_mode_nolock(void)
+{
+	return pgc->prev_pm;
 }
 
 bool primary_is_aod_supported(void)
@@ -2612,6 +2615,13 @@ static int _DC_switch_to_DL_fast(int block)
 
 	/* copy ovl config from DC handle to DL handle */
 	memcpy(data_config_dl->ovl_config, data_config_dc->ovl_config, sizeof(data_config_dl->ovl_config));
+	memcpy(&data_config_dl->rsz_enable, &data_config_dc->rsz_enable,
+		sizeof(data_config_dc->rsz_enable));
+	memcpy(&data_config_dl->rsz_src_roi, &data_config_dc->rsz_src_roi,
+		sizeof(data_config_dc->rsz_src_roi));
+	memcpy(&data_config_dl->rsz_dst_roi, &data_config_dc->rsz_dst_roi,
+		sizeof(data_config_dc->rsz_dst_roi));
+
 #if (defined(CONFIG_MTK_TEE_GP_SUPPORT) || defined(CONFIG_TRUSTONIC_TEE_SUPPORT)) && \
 		defined(CONFIG_MTK_SEC_VIDEO_PATH_SUPPORT)
 	/*[SVP]switch ddp mosule to nonsec when deinit the extension path*/
@@ -3290,7 +3300,6 @@ static int _convert_disp_input_to_ovl(struct OVL_CONFIG_STRUCT *dst, struct disp
 
 	if (src->buffer_source == DISP_BUFFER_ALPHA) {
 		dst->source = OVL_LAYER_SOURCE_RESERVED; /* dim layer, constant alpha */
-		dst->dim_color = src->dim_color;
 	} else if (src->buffer_source == DISP_BUFFER_ION || src->buffer_source == DISP_BUFFER_MVA) {
 		dst->source = OVL_LAYER_SOURCE_MEM; /* from memory */
 	} else {
@@ -4332,6 +4341,8 @@ int primary_display_init(char *lcm_name, unsigned int lcm_fps, int is_lcm_inited
 	init_cmdq_slots(&(pgc->dither_status_info), 1, 0x10001);
 	init_cmdq_slots(&(pgc->dsi_vfp_line), 1, 0);
 	init_cmdq_slots(&(pgc->night_light_params), 17, 0);
+
+	pgc->prev_pm = MTKFB_POWER_MODE_UNKNOWN;
 
 
 	/* init night light related variable */
@@ -5654,7 +5665,7 @@ done:
 	if (disp_helper_get_option(DISP_OPT_CV_BYSUSPEND))
 		DSI_ForceConfig(0);
 
-	if (primary_display_get_power_mode_nolock() == DOZE)
+	if (primary_display_get_prev_power_mode_nolock() == DOZE_SUSPEND)
 		primary_display_esd_check_enable(1);
 
 	DISPDBG("hold the wakelock...\n");

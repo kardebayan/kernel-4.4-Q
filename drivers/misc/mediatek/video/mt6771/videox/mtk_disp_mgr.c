@@ -182,6 +182,22 @@ int disp_create_session(struct disp_session_config *config)
 	int is_session_inited = 0;
 	unsigned int session = MAKE_DISP_SESSION(config->type, config->device_id);
 	int i, idx = -1;
+
+	/* check input session info */
+	if (DISP_SESSION_DEV(session) > 0xF) {
+		DISPERR("%s invalid device %u\n",
+				__func__, DISP_SESSION_DEV(session));
+		return -1;
+	}
+
+	if (DISP_SESSION_TYPE(session) != DISP_SESSION_PRIMARY &&
+			DISP_SESSION_TYPE(session) != DISP_SESSION_EXTERNAL &&
+			DISP_SESSION_TYPE(session) != DISP_SESSION_MEMORY) {
+		DISPERR("%s invalid type %u\n",
+				__func__, DISP_SESSION_TYPE(session));
+		return -1;
+	}
+
 	/* 1.To check if this session exists already */
 	mutex_lock(&disp_session_lock);
 	for (i = 0; i < MAX_SESSION_COUNT; i++) {
@@ -1350,7 +1366,6 @@ int _ioctl_get_ut_result(unsigned long arg)
 /*---------------- function for repaint start ------------------*/
 void trigger_repaint(int type)
 {
-#if 0
 	if (type > WAIT_FOR_REFRESH && type < REFRESH_TYPE_NUM) {
 		struct repaint_job_t *repaint_job;
 
@@ -1379,7 +1394,6 @@ void trigger_repaint(int type)
 		DISPMSG("[REPAINT] insert new repaint_job in queue, type: %d\n", type);
 		wake_up_interruptible(&repaint_wq);
 	}
-#endif
 }
 
 int _ioctl_wait_self_refresh_trigger(unsigned long arg)

@@ -538,6 +538,11 @@ static int _ovl_lc_config(enum DISP_MODULE_ENUM module,
 	unsigned long ovl_base = ovl_base_addr(module);
 	struct disp_rect rsz_dst_roi = pconfig->rsz_dst_roi;
 	u32 lc_x, lc_y, lc_w, lc_h;
+	int rotate = 0;
+
+#ifdef CONFIG_MTK_LCM_PHYSICAL_ROTATION_HW
+	rotate = 1;
+#endif
 
 	if (pconfig->rsz_enable) {
 		lc_x = rsz_dst_roi.x;
@@ -549,6 +554,14 @@ static int _ovl_lc_config(enum DISP_MODULE_ENUM module,
 		lc_y = 0;
 		lc_w = pconfig->dst_w;
 		lc_h = pconfig->dst_h;
+	}
+
+	if (rotate) {
+		unsigned int bg_w = 0, bg_h = 0;
+
+		_get_roi(module, &bg_w, &bg_h);
+		lc_y = bg_h - lc_h - lc_y;
+		lc_x = bg_w - lc_w - lc_x;
 	}
 
 	DISP_REG_SET_FIELD(handle, FLD_OVL_LC_XOFF,
