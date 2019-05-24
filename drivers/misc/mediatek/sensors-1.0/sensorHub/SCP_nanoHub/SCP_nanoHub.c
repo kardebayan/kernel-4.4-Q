@@ -1883,20 +1883,6 @@ int sensor_set_cmd_to_hub(uint8_t sensorType, CUST_ACTION action, void *data)
 			return -1;
 		}
 		break;
-	case ID_SAR:
-		req.set_cust_req.sensorType = ID_SAR;
-		req.set_cust_req.action = SENSOR_HUB_SET_CUST;
-		switch (action) {
-		case CUST_ACTION_GET_SENSOR_INFO:
-			req.set_cust_req.getInfo.action =
-				CUST_ACTION_GET_SENSOR_INFO;
-			len = offsetof(SCP_SENSOR_HUB_SET_CUST_REQ, custData)
-			    + sizeof(req.set_cust_req.getInfo);
-			break;
-		default:
-			return -1;
-		}
-		break;
 	default:
 		req.set_cust_req.sensorType = sensorType;
 		req.set_cust_req.action = SENSOR_HUB_SET_CUST;
