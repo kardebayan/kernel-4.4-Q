@@ -94,6 +94,8 @@ static void __init find_limits(unsigned long *min, unsigned long *max_low,
 	*max_low = PFN_DOWN(memblock_get_current_limit());
 	*min = PFN_UP(memblock_start_of_DRAM());
 	*max_high = PFN_DOWN(memblock_end_of_DRAM());
+	if (*max_high < virt_to_pfn(high_memory))
+		*max_high = virt_to_pfn(high_memory);
 }
 
 #ifdef CONFIG_ZONE_DMA
