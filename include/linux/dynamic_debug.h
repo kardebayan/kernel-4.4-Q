@@ -79,60 +79,60 @@ void __dynamic_netdev_dbg(struct _ddebug *descriptor,
 	}
 
 #define dynamic_pr_emerg(fmt, ...)              \
-do {                                \
+({ \
 	DEFINE_DYNAMIC_DEBUG_METADATA(descriptor, fmt);     \
 	if (unlikely(descriptor.flags & _DPRINTK_FLAGS_PRINT))  \
 		__dynamic_pr_emerg(&descriptor, pr_fmt(fmt),    \
 			##__VA_ARGS__);      \
-} while (0)
+})
 
 #define dynamic_pr_alert(fmt, ...)              \
-do {                                \
+({ \
 	DEFINE_DYNAMIC_DEBUG_METADATA(descriptor, fmt);     \
 	if (unlikely(descriptor.flags & _DPRINTK_FLAGS_PRINT))  \
 		__dynamic_pr_alert(&descriptor, pr_fmt(fmt),    \
 			##__VA_ARGS__);      \
-} while (0)
+})
 
 #define dynamic_pr_crit(fmt, ...)               \
-do {                                \
+({ \
 	DEFINE_DYNAMIC_DEBUG_METADATA(descriptor, fmt);     \
 	if (unlikely(descriptor.flags & _DPRINTK_FLAGS_PRINT))  \
 		__dynamic_pr_crit(&descriptor, pr_fmt(fmt), \
 			##__VA_ARGS__);      \
-} while (0)
+})
 
 #define dynamic_pr_err(fmt, ...)                \
-do {                                \
+({ \
 	DEFINE_DYNAMIC_DEBUG_METADATA(descriptor, fmt);     \
 	if (unlikely(descriptor.flags & _DPRINTK_FLAGS_PRINT))  \
 		__dynamic_pr_err(&descriptor, pr_fmt(fmt),  \
 			##__VA_ARGS__);      \
-} while (0)
+})
 
 #define dynamic_pr_warn(fmt, ...)               \
-do {                                \
+({ \
 	DEFINE_DYNAMIC_DEBUG_METADATA(descriptor, fmt);     \
 	if (unlikely(descriptor.flags & _DPRINTK_FLAGS_PRINT))  \
 		__dynamic_pr_warn(&descriptor, pr_fmt(fmt), \
 			##__VA_ARGS__);      \
-} while (0)
+})
 
 #define dynamic_pr_notice(fmt, ...)             \
-do {                                \
+({ \
 	DEFINE_DYNAMIC_DEBUG_METADATA(descriptor, fmt);     \
 	if (unlikely(descriptor.flags & _DPRINTK_FLAGS_PRINT))  \
 		__dynamic_pr_notice(&descriptor, pr_fmt(fmt),   \
 			##__VA_ARGS__);      \
-} while (0)
+})
 
 #define dynamic_pr_info(fmt, ...)               \
-do {                                \
+({ \
 	DEFINE_DYNAMIC_DEBUG_METADATA(descriptor, fmt);     \
 	if (unlikely(descriptor.flags & _DPRINTK_FLAGS_PRINT))  \
 		__dynamic_pr_info(&descriptor, pr_fmt(fmt), \
 			##__VA_ARGS__);      \
-} while (0)
+})
 
 #define dynamic_pr_debug(fmt, ...)				\
 do {								\
