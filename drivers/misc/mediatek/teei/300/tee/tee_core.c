@@ -702,7 +702,9 @@ static const struct file_operations tee_fops = {
 	.open = tee_open,
 	.release = tee_release,
 	.unlocked_ioctl = tee_ioctl,
+#ifdef CONFIG_COMPAT
 	.compat_ioctl = tee_ioctl,
+#endif
 };
 
 static void tee_release_device(struct device *dev)
