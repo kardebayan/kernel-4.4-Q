@@ -51,7 +51,7 @@
 static unsigned int order_gfp_flags[] = {
 	(GFP_HIGHUSER | __GFP_ZERO | __GFP_NOWARN | __GFP_NORETRY) & ~__GFP_RECLAIM,
 	(GFP_HIGHUSER | __GFP_ZERO | __GFP_NOWARN | __GFP_NORETRY) & ~__GFP_DIRECT_RECLAIM,
-	(GFP_HIGHUSER | __GFP_ZERO | __GFP_NOWARN)
+	(GFP_HIGHUSER | __GFP_ZERO)
 };
 
 static int order_to_index(unsigned int order)

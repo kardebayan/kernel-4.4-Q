@@ -109,6 +109,10 @@ int ion_heap_debug_show(struct ion_heap *heap, struct seq_file *s, void *unused)
 	size_t va2mva_sz = 0;
 	size_t mm_sz = 0;
 
+	current_ts = sched_clock();
+	do_div(current_ts, 1000000);
+	seq_printf(s, "time 3 %lld ms\n", current_ts);
+
 	if (heap->type == (int)ION_HEAP_TYPE_MULTIMEDIA) {
 		int i;
 		struct ion_system_heap
@@ -152,6 +156,11 @@ int ion_heap_debug_show(struct ion_heap *heap, struct seq_file *s, void *unused)
 			     "flag", "heap_id", "pid(alloc_pid)", "comm(client)", "v1", "v2", "v3", "v4", "dbg_name");
 
 	mutex_lock(&dev->buffer_lock);
+
+	current_ts = sched_clock();
+	do_div(current_ts, 1000000);
+	seq_printf(s, "time 4 %lld ms\n", current_ts);
+
 	for (n = rb_first(&dev->buffers); n; n = rb_next(n)) {
 		struct ion_buffer
 		*buffer = rb_entry(n, struct ion_buffer, node);
@@ -204,10 +213,18 @@ int ion_heap_debug_show(struct ion_heap *heap, struct seq_file *s, void *unused)
 			has_orphaned = true;
 	}
 
+	current_ts = sched_clock();
+	do_div(current_ts, 1000000);
+	seq_printf(s, "time 5 %lld ms\n", current_ts);
+
 	if (has_orphaned) {
 		ION_PRINT_LOG_OR_SEQ(s, "-----orphaned buffer list:------------------\n");
 		ion_dump_all_share_fds(s);
 	}
+
+	current_ts = sched_clock();
+	do_div(current_ts, 1000000);
+	seq_printf(s, "time 6 %lld ms\n", current_ts);
 
 	mutex_unlock(&dev->buffer_lock);
 
@@ -269,6 +286,7 @@ int ion_heap_debug_show(struct ion_heap *heap, struct seq_file *s, void *unused)
 	}
 	current_ts = sched_clock();
 	do_div(current_ts, 1000000);
+	ION_PRINT_LOG_OR_SEQ(s, "current time %lld ms\n", current_ts);
 	up_read(&dev->lock);
 
 	return 0;
