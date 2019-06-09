@@ -53,7 +53,7 @@
 #define CMD_LEN  64
 
 enum region_type {
-#ifdef SSMR_SECMEM_REGION_ENABLE
+#ifdef SSVP_SECMEM_REGION_ENABLE
 	SSVP_SVP,
 #endif
 #ifdef SSVP_TUI_REGION_ENABLE
