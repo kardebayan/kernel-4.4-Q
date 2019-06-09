@@ -3792,6 +3792,7 @@ static struct TaskStruct *cmdq_core_acquire_task(
 	int32_t status;
 	CMDQ_TIME time_cost;
 	struct TaskPrivateStruct *private = NULL, *desc_private = NULL;
+	const u64 inorder_mask = 1ll << CMDQ_ENG_INORDER;
 
 	CMDQ_MSG(
 		"-->TASK: acquire task begin CMD:0x%p, size:%d, Eng:0x%016llx\n",
@@ -3812,7 +3813,7 @@ static struct TaskStruct *cmdq_core_acquire_task(
 		pTask->desc = pCommandDesc;
 		pTask->scenario = pCommandDesc->scenario;
 		pTask->priority = pCommandDesc->priority;
-		pTask->engineFlag = pCommandDesc->engineFlag;
+		pTask->engineFlag = pCommandDesc->engineFlag & ~inorder_mask;
 		pTask->loopCallback = loopCB;
 		pTask->loopData = loopData;
 		pTask->taskState = TASK_STATE_WAITING;
@@ -3854,6 +3855,9 @@ static struct TaskStruct *cmdq_core_acquire_task(
 			pTask->res_engine_flag_acquire = 0;
 			pTask->res_engine_flag_release = 0;
 		}
+
+		if (pCommandDesc->engineFlag & inorder_mask)
+			pTask->force_inorder = true;
 
 		/* reset private data from desc */
 		desc_private = (struct TaskPrivateStruct *)CMDQ_U32_PTR(
@@ -8558,6 +8562,7 @@ static s32 cmdq_core_consume_waiting_list(struct work_struct *_ignore,
 	uint32_t user_list_count = 0;
 	uint32_t index = 0;
 	CMDQ_TIME consume_cost;
+	bool force_inorder = false;
 
 	/* when we're suspending, do not execute any tasks. delay & hold them. */
 	if (gCmdqSuspended)
@@ -8576,6 +8581,13 @@ static s32 cmdq_core_consume_waiting_list(struct work_struct *_ignore,
 	list_for_each_safe(p, n, &gCmdqContext.taskWaitList) {
 		struct TaskStruct *pTask = list_entry(p, struct TaskStruct,
 			listEntry);
+
+		if (force_inorder && pTask->force_inorder) {
+			CMDQ_LOG(
+				"skip force inorder handle:0x%p engine:0x%llx\n",
+				pTask, pTask->engineFlag);
+			continue;
+		}
 
 		/* check if task from client and no buffer */
 		if (pTask->is_client_buffer &&
@@ -8617,6 +8629,12 @@ static s32 cmdq_core_consume_waiting_list(struct work_struct *_ignore,
 
 		if (thread == CMDQ_INVALID_THREAD) {
 			/* have to wait, remain in wait list */
+			if (pTask->force_inorder) {
+				CMDQ_LOG(
+					"begin force inorder handle:0x%p engine:0x%llx\n",
+					pTask, pTask->engineFlag);
+				force_inorder = true;
+			}
 			CMDQ_MSG("<--THREAD: acquire thread fail, need to wait\n");
 			if (needLog == true) {
 				/* task wait too long */
