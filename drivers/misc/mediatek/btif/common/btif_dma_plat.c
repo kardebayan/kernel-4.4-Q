@@ -740,8 +740,8 @@ int hal_tx_dma_irq_handler(P_MTK_DMA_INFO_STR p_dma_info)
 			i_ret = hal_btif_dma_ier_ctrl(p_dma_info, false);
 			BTIF_ERR_FUNC
 			    ("**********************ERROR, ERROR, ERROR**************************\n");
-			BTIF_ERR_FUNC
-			    ("BTIF Tx IRQ happened %d times (continiously), between %d.%d and %d.%d\n",
+			BTIF_ERR_FUNC(
+			     "Tx happened %d times, between %ld.%ld and %ld.%ld\n",
 			     MAX_CONTINIOUS_TIMES, start_timer.tv_sec,
 			     start_timer.tv_usec, end_timer.tv_usec,
 			     end_timer.tv_usec);
@@ -1428,15 +1428,17 @@ static void hal_btif_tx_dma_vff_set_for_4g(void)
 {
 	BTIF_DBG_FUNC("Set btif tx_vff_addr bit29\n");
 	BTIF_SET_BIT(TX_DMA_VFF_ADDR_H(mtk_btif_tx_dma.base), DMA_VFF_BIT29_OFFSET);
-	BTIF_DBG_FUNC("Dump value of bit29 0x%x:(0x%x)\n", TX_DMA_VFF_ADDR_H(mtk_btif_tx_dma.base),
-					BTIF_READ32(TX_DMA_VFF_ADDR_H(mtk_btif_tx_dma.base)));
+	BTIF_DBG_FUNC("Dump value of bit29 0x%lx:(0x%x)\n",
+			TX_DMA_VFF_ADDR_H(mtk_btif_tx_dma.base),
+			BTIF_READ32(TX_DMA_VFF_ADDR_H(mtk_btif_tx_dma.base)));
 }
 static void hal_btif_rx_dma_vff_set_for_4g(void)
 {
 	BTIF_DBG_FUNC("Set btif rx_vff_addr bit29\n");
 	BTIF_SET_BIT(RX_DMA_VFF_ADDR_H(mtk_btif_rx_dma.base), DMA_VFF_BIT29_OFFSET);
-	BTIF_DBG_FUNC("Dump value of bit29 0x%x:(0x%x)\n", RX_DMA_VFF_ADDR_H(mtk_btif_rx_dma.base),
-					BTIF_READ32(RX_DMA_VFF_ADDR_H(mtk_btif_rx_dma.base)));
+	BTIF_DBG_FUNC("Dump value of bit29 0x%lx:(0x%x)\n",
+			RX_DMA_VFF_ADDR_H(mtk_btif_rx_dma.base),
+			BTIF_READ32(RX_DMA_VFF_ADDR_H(mtk_btif_rx_dma.base)));
 }
 
 /*****************************************************************************
