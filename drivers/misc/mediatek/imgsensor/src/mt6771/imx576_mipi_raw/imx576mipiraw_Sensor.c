@@ -2527,20 +2527,20 @@ static void hdr_write_tri_shutter(kal_uint16 le, kal_uint16 me, kal_uint16 se)
 
 }
 
-static void hdr_write_tri_gain(kal_uint16 lg, kal_uint16 mg, kal_uint16 sg)
+static void hdr_write_tri_gain(kal_uint16 lgain, kal_uint16 mg, kal_uint16 sg)
 {
 	kal_uint16 reg_lg, reg_mg, reg_sg;
 
-	if (lg < BASEGAIN || lg > 16 * BASEGAIN) {
+	if (lgain < BASEGAIN || lgain > 16 * BASEGAIN) {
 		LOG_INF("Error gain setting");
 
-		if (lg < BASEGAIN)
-			lg = BASEGAIN;
-		else if (lg > 16 * BASEGAIN)
-			lg = 16 * BASEGAIN;
+		if (lgain < BASEGAIN)
+			lgain = BASEGAIN;
+		else if (lgain > 16 * BASEGAIN)
+			lgain = 16 * BASEGAIN;
 	}
 
-	reg_lg = gain2reg(lg);
+	reg_lg = gain2reg(lgain);
 	reg_mg = gain2reg(mg);
 	reg_sg = gain2reg(sg);
 	spin_lock(&imgsensor_drv_lock);
@@ -2557,7 +2557,7 @@ static void hdr_write_tri_gain(kal_uint16 lg, kal_uint16 mg, kal_uint16 sg)
 	write_cmos_sensor_8(0x0216, (reg_sg>>8) & 0xFF);
 	write_cmos_sensor_8(0x0217, reg_sg & 0xFF);
 
-	if (lg > mg) {
+	if (lgain > mg) {
 		LOG_INF("long gain > medium gain\n");
 		write_cmos_sensor_8(0xEB06, 0x00);
 		write_cmos_sensor_8(0xEB08, 0x00);
@@ -2591,8 +2591,8 @@ static void hdr_write_tri_gain(kal_uint16 lg, kal_uint16 mg, kal_uint16 sg)
 	write_cmos_sensor_8(0x0104, 0x00);
 
 	LOG_INF(
-		"lg:0x%x, reg_lg:0x%x, sg:0x%x, reg_mg:0x%x, mg:0x%x, reg_sg:0x%x\n",
-		lg, reg_lg, mg, reg_mg, sg, reg_sg);
+		"lgain:0x%x, reg_lg:0x%x, sg:0x%x, reg_mg:0x%x, mg:0x%x, reg_sg:0x%x\n",
+		lgain, reg_lg, mg, reg_mg, sg, reg_sg);
 
 }
 
