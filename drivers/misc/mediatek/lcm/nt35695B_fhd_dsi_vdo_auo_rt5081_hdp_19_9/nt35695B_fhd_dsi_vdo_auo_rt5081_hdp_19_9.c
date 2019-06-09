@@ -20,7 +20,6 @@
 
 #include "lcm_drv.h"
 
-
 #ifdef BUILD_LK
 #include <platform/upmu_common.h>
 #include <platform/mt_gpio.h>
@@ -29,8 +28,6 @@
 #include <string.h>
 #elif defined(BUILD_UBOOT)
 #include <asm/arch/mt_gpio.h>
-#else
-#include <linux/regulator/mediatek/mtk_regulator.h>
 #endif
 
 #ifdef BUILD_LK
@@ -52,16 +49,16 @@ static LCM_UTIL_FUNCS lcm_util;
 #define UDELAY(n)		(lcm_util.udelay(n))
 
 #define dsi_set_cmdq_V22(cmdq, cmd, count, ppara, force_update) \
-	lcm_util.dsi_set_cmdq_V22(cmdq, cmd, count, ppara, force_update)
+		lcm_util.dsi_set_cmdq_V22(cmdq, cmd, count, ppara, force_update)
 #define dsi_set_cmdq_V2(cmd, count, ppara, force_update) \
-	lcm_util.dsi_set_cmdq_V2(cmd, count, ppara, force_update)
+		lcm_util.dsi_set_cmdq_V2(cmd, count, ppara, force_update)
 #define dsi_set_cmdq(pdata, queue_size, force_update) \
 		lcm_util.dsi_set_cmdq(pdata, queue_size, force_update)
 #define wrtie_cmd(cmd) lcm_util.dsi_write_cmd(cmd)
 #define write_regs(addr, pdata, byte_nums) \
 		lcm_util.dsi_write_regs(addr, pdata, byte_nums)
 #define read_reg(cmd) \
-	  lcm_util.dsi_dcs_read_lcm_reg(cmd)
+		lcm_util.dsi_dcs_read_lcm_reg(cmd)
 #define read_reg_v2(cmd, buffer, buffer_size) \
 		lcm_util.dsi_dcs_read_lcm_reg_v2(cmd, buffer, buffer_size)
 
@@ -84,19 +81,19 @@ static LCM_UTIL_FUNCS lcm_util;
 
 /* static unsigned char lcd_id_pins_value = 0xFF; */
 static const unsigned char LCD_MODULE_ID = 0x01;
-#define LCM_DSI_CMD_MODE									0
-#define FRAME_WIDTH										(720)
-#define FRAME_HEIGHT									(1440)
-#define VIRTUAL_WIDTH									(1080)
-#define VIRTUAL_HEIGHT								(1920)
+#define LCM_DSI_CMD_MODE	0
+#define FRAME_WIDTH		(720)
+#define FRAME_HEIGHT		(1520)
+#define VIRTUAL_WIDTH		(1080)
+#define VIRTUAL_HEIGHT		(1920)
 
 /* physical size in um */
-#define LCM_PHYSICAL_WIDTH									(74520)
-#define LCM_PHYSICAL_HEIGHT									(132480)
-#define LCM_DENSITY											(320)
+#define LCM_PHYSICAL_WIDTH	(74520)
+#define LCM_PHYSICAL_HEIGHT	(132480)
+#define LCM_DENSITY		(320)
 
 #define REGFLAG_DELAY		0xFFFC
-#define REGFLAG_UDELAY	0xFFFB
+#define REGFLAG_UDELAY		0xFFFB
 #define REGFLAG_END_OF_TABLE	0xFFFD
 #define REGFLAG_RESET_LOW	0xFFFE
 #define REGFLAG_RESET_HIGH	0xFFFF
@@ -130,13 +127,12 @@ static struct LCM_setting_table init_setting_cmd[] = {
 	{0xFB, 1, {0x01} },
 	{0xC5, 1, {0x31} },
 
-
 	{0xFF, 1, {0x20} },
 	{0x00, 1, {0x01} },
 	{0x01, 1, {0x55} },
 	{0x02, 1, {0x45} },
 	{0x03, 1, {0x55} },
-	{0x05, 1, {0x40} },/* VGH=2xAVDD, VGL=2xAVEE */
+	{0x05, 1, {0x40} }, /* VGH=2xAVDD, VGL=2xAVEE */
 	{0x06, 1, {0x99} },
 	{0x07, 1, {0x9E} },
 	{0x08, 1, {0x0C} },
@@ -144,8 +140,8 @@ static struct LCM_setting_table init_setting_cmd[] = {
 	{0x0C, 1, {0x87} },
 	{0x0E, 1, {0xAB} },
 	{0x0F, 1, {0xA9} },
-	{0x11, 1, {0x0D} },/* VCOM */
-	{0x12, 1, {0x10} },/* VCOM */
+	{0x11, 1, {0x0D} }, /* VCOM */
+	{0x12, 1, {0x10} }, /* VCOM */
 	{0x13, 1, {0x03} },
 	{0x14, 1, {0x4A} },
 	{0x15, 1, {0x12} },
@@ -195,7 +191,7 @@ static struct LCM_setting_table init_setting_cmd[] = {
 	{0x1D, 1, {0x13} },
 	{0x1E, 1, {0x15} },
 	{0x1F, 1, {0x17} },
-	{0x20, 1, {0x00} },/* STV */
+	{0x20, 1, {0x00} }, /* STV */
 	{0x21, 1, {0x03} },
 	{0x22, 1, {0x01} },
 	{0x23, 1, {0x4A} },
@@ -210,21 +206,22 @@ static struct LCM_setting_table init_setting_cmd[] = {
 	{0x39, 1, {0x01} },
 	{0x3A, 1, {0x8E} },
 
-	{0xBD, 1, {0x20} },/* VEND */
+	{0xBD, 1, {0x20} }, /* VEND */
 	{0xB6, 1, {0x22} },
 	{0xB7, 1, {0x24} },
 	{0xB8, 1, {0x07} },
 	{0xB9, 1, {0x07} },
 	{0xC1, 1, {0x6D} },
-	{0xC2, 1, {0x00} }, /* disable Vblank protection for low fps power saving (for vdo mode)*/
-	{0xC4, 1, {0x24} },/* updated */
+	/* disable Vblank protection for low fps power saving (for vdo mode) */
+	{0xC2, 1, {0x00} },
+	{0xC4, 1, {0x24} }, /* updated */
 
 	{0xBE, 1, {0x07} },
 	{0xBF, 1, {0x07} },
-	{0x29, 1, {0xD8} },/* UD */
+	{0x29, 1, {0xD8} }, /* UD */
 	{0x2A, 1, {0x2A} },
 
-	{0x5B, 1, {0x43} },/* CTRL */
+	{0x5B, 1, {0x43} }, /* CTRL */
 	{0x5C, 1, {0x00} },
 	{0x5F, 1, {0x73} },
 	{0x60, 1, {0x73} },
@@ -233,7 +230,7 @@ static struct LCM_setting_table init_setting_cmd[] = {
 	{0x67, 1, {0x08} },
 	{0x68, 1, {0x04} },
 
-	{0x7A, 1, {0x80} },/* MUX */
+	{0x7A, 1, {0x80} }, /* MUX */
 	{0x7B, 1, {0x91} },
 	{0x7C, 1, {0xD8} },
 	{0x7D, 1, {0x60} },
@@ -246,26 +243,24 @@ static struct LCM_setting_table init_setting_cmd[] = {
 	{0x77, 1, {0x04} },
 	{0x82, 1, {0x04} },
 
-	{0x93, 1, {0x06} },/* FP,BP */
+	{0x93, 1, {0x06} }, /* FP, BP */
 	{0x94, 1, {0x06} },
 	{0xB3, 1, {0x00} },
 	{0xB4, 1, {0x00} },
 	{0xB5, 1, {0x00} },
 
-	{0x78, 1, {0x00} },/* SOURCE EQ */
+	{0x78, 1, {0x00} }, /* SOURCE EQ */
 	{0x79, 1, {0x00} },
 	{0x80, 1, {0x00} },
 	{0x83, 1, {0x00} },
 	{0x84, 1, {0x04} },
 
-
-	{0x8A, 1, {0x33} },/* /Inversion Type// pixel column driving */
+	{0x8A, 1, {0x33} }, /* Inversion Type, pixel column driving */
 	{0x8B, 1, {0xF0} },
 	{0x9B, 1, {0x0F} },
 	{0xC6, 1, {0x09} },
 	{0xFB, 1, {0x01} },
 	{0xEC, 1, {0x00} },
-
 
 	{0xFF, 1, {0x20} },
 	{0xFB, 1, {0x01} },
@@ -329,7 +324,7 @@ static struct LCM_setting_table init_setting_cmd[] = {
 	{0xB0, 1, {0x91} },
 	{0xB1, 1, {0x03} },
 	{0xB2, 1, {0xCF} },
-	{0xB3, 1, {0x00} },/* RN GAMMA SETTING */
+	{0xB3, 1, {0x00} }, /* RN GAMMA SETTING */
 	{0xB4, 1, {0x49} },
 	{0xB5, 1, {0x00} },
 	{0xB6, 1, {0x78} },
@@ -390,7 +385,7 @@ static struct LCM_setting_table init_setting_cmd[] = {
 	{0xED, 1, {0x03} },
 	{0xEE, 1, {0xCF} },
 
-	{0xEF, 1, {0x00} },/* GP GAMMA SETTING */
+	{0xEF, 1, {0x00} }, /* GP GAMMA SETTING */
 	{0xF0, 1, {0x49} },
 	{0xF1, 1, {0x00} },
 	{0xF2, 1, {0x78} },
@@ -403,7 +398,7 @@ static struct LCM_setting_table init_setting_cmd[] = {
 	{0xF9, 1, {0x00} },
 	{0xFA, 1, {0xED} },
 
-	{0xFF, 1, {0x21} },/* CMD2 PAGE1 */
+	{0xFF, 1, {0x21} }, /* CMD2 PAGE1 */
 	{0xFB, 1, {0x01} },
 
 	{0x00, 1, {0x00} },
@@ -514,7 +509,7 @@ static struct LCM_setting_table init_setting_cmd[] = {
 	{0x6E, 1, {0x91} },
 	{0x6F, 1, {0x03} },
 	{0x70, 1, {0xCF} },
-	{0x71, 1, {0x00} },/* BP GAMMA SETTING */
+	{0x71, 1, {0x00} }, /* BP GAMMA SETTING */
 	{0x72, 1, {0x49} },
 	{0x73, 1, {0x00} },
 	{0x74, 1, {0x78} },
@@ -635,26 +630,31 @@ static struct LCM_setting_table init_setting_cmd[] = {
 	{0xE9, 1, {0x03} },
 	{0xEA, 1, {0xCF} },
 
-	{0xFF, 1, {0x10} }, /* Return  To CMD1 */
+	{0xFF, 1, {0x10} }, /* Return to CMD1 */
 	{REGFLAG_UDELAY, 1, {} },
 	{0x3B, 3, {0x03, 0x0a, 0x0a} },
 
 	{0x35, 1, {0x00} },
-	{0x44, 2, {0x07, 0x78} }, /* set TE event @ line 0x778(1912) for partial update */
+	/* set TE event @line 0x778(1912) for partial update */
+	{0x44, 2, {0x07, 0x78} },
 
-	/* don't reload cmd1 setting from MTP when exit sleep.(or C9 will be overwritten) */
+	/*
+	 * don't reload cmd1 setting from MTP
+	 * when exit sleep. (or C9 will be overwritten)
+	 */
 	{0xFB, 1, {0x01} },
 	/* set partial update option */
-	{0xC9, 11, {0x49, 0x02, 0x05, 0x00, 0x0F, 0x06, 0x67, 0x03, 0x2E, 0x10, 0xF0} },
+	{0xC9, 11, {0x49, 0x02, 0x05, 0x00, 0x0F, 0x06,
+		    0x67, 0x03, 0x2E, 0x10, 0xF0} },
 
-	{0xBB, 1, {0x10} },/* 0x03:video mode  0x10:command mode */
+	{0xBB, 1, {0x10} }, /* 0x03:video mode; 0x10:command mode */
 
-	/*{REGFLAG_DELAY, 200, {} },*/
+	/* {REGFLAG_DELAY, 200, {} }, */
 	{0x11, 0, {} },
 	{REGFLAG_DELAY, 120, {} },
 	{0x29, 0, {} },
-	/*{REGFLAG_DELAY, 200, {} },*/
-	/* ///////////////////CABC SETTING///////// */
+	/* {REGFLAG_DELAY, 200, {} }, */
+	/* CABC SETTING */
 	{0x51, 1, {0x00} },
 	{0x5E, 1, {0x00} },
 	{0x53, 1, {0x24} },
@@ -666,13 +666,12 @@ static struct LCM_setting_table init_setting_vdo[] = {
 	{0xFB, 1, {0x01} },
 	{0xC5, 1, {0x31} },
 
-
 	{0xFF, 1, {0x20} },
 	{0x00, 1, {0x01} },
 	{0x01, 1, {0x55} },
 	{0x02, 1, {0x45} },
 	{0x03, 1, {0x55} },
-	{0x05, 1, {0x40} },/* VGH=2xAVDD, VGL=2xAVEE */
+	{0x05, 1, {0x40} }, /* VGH=2xAVDD, VGL=2xAVEE */
 	{0x06, 1, {0x99} },
 	{0x07, 1, {0x9E} },
 	{0x08, 1, {0x0C} },
@@ -680,8 +679,8 @@ static struct LCM_setting_table init_setting_vdo[] = {
 	{0x0C, 1, {0x87} },
 	{0x0E, 1, {0xAB} },
 	{0x0F, 1, {0xA9} },
-	{0x11, 1, {0x0D} },/* VCOM */
-	{0x12, 1, {0x10} },/* VCOM */
+	{0x11, 1, {0x0D} }, /* VCOM */
+	{0x12, 1, {0x10} }, /* VCOM */
 	{0x13, 1, {0x03} },
 	{0x14, 1, {0x4A} },
 	{0x15, 1, {0x12} },
@@ -731,7 +730,7 @@ static struct LCM_setting_table init_setting_vdo[] = {
 	{0x1D, 1, {0x13} },
 	{0x1E, 1, {0x15} },
 	{0x1F, 1, {0x17} },
-	{0x20, 1, {0x00} },/* STV */
+	{0x20, 1, {0x00} }, /* STV */
 	{0x21, 1, {0x03} },
 	{0x22, 1, {0x01} },
 	{0x23, 1, {0x4A} },
@@ -746,21 +745,23 @@ static struct LCM_setting_table init_setting_vdo[] = {
 	{0x39, 1, {0x01} },
 	{0x3A, 1, {0x8E} },
 
-	{0xBD, 1, {0x20} },/* VEND */
+	{0xBD, 1, {0x20} }, /* VEND */
 	{0xB6, 1, {0x22} },
 	{0xB7, 1, {0x24} },
 	{0xB8, 1, {0x07} },
 	{0xB9, 1, {0x07} },
 	{0xC1, 1, {0x6D} },
-	{0xC2, 1, {0x00} }, /* disable Vblank protection for low fps power saving (for vdo mode)*/
-	{0xC4, 1, {0x24} },/* updated */
+	/* disable Vblank protection for low fps power saving (for vdo mode) */
+	{0xC2, 1, {0x00} },
+
+	{0xC4, 1, {0x24} }, /* updated */
 
 	{0xBE, 1, {0x07} },
 	{0xBF, 1, {0x07} },
-	{0x29, 1, {0xD8} },/* UD */
+	{0x29, 1, {0xD8} }, /* UD */
 	{0x2A, 1, {0x2A} },
 
-	{0x5B, 1, {0x43} },/* CTRL */
+	{0x5B, 1, {0x43} }, /* CTRL */
 	{0x5C, 1, {0x00} },
 	{0x5F, 1, {0x73} },
 	{0x60, 1, {0x73} },
@@ -769,7 +770,7 @@ static struct LCM_setting_table init_setting_vdo[] = {
 	{0x67, 1, {0x08} },
 	{0x68, 1, {0x04} },
 
-	{0x7A, 1, {0x80} },/* MUX */
+	{0x7A, 1, {0x80} }, /* MUX */
 	{0x7B, 1, {0x91} },
 	{0x7C, 1, {0xD8} },
 	{0x7D, 1, {0x60} },
@@ -782,26 +783,24 @@ static struct LCM_setting_table init_setting_vdo[] = {
 	{0x77, 1, {0x04} },
 	{0x82, 1, {0x04} },
 
-	{0x93, 1, {0x06} },/* FP,BP */
+	{0x93, 1, {0x06} }, /* FP, BP */
 	{0x94, 1, {0x06} },
 	{0xB3, 1, {0x00} },
 	{0xB4, 1, {0x00} },
 	{0xB5, 1, {0x00} },
 
-	{0x78, 1, {0x00} },/* SOURCE EQ */
+	{0x78, 1, {0x00} }, /* SOURCE EQ */
 	{0x79, 1, {0x00} },
 	{0x80, 1, {0x00} },
 	{0x83, 1, {0x00} },
 	{0x84, 1, {0x04} },
 
-
-	{0x8A, 1, {0x33} },/* /Inversion Type// pixel column driving */
+	{0x8A, 1, {0x33} }, /* Inversion Type, pixel column driving */
 	{0x8B, 1, {0xF0} },
 	{0x9B, 1, {0x0F} },
 	{0xC6, 1, {0x09} },
 	{0xFB, 1, {0x01} },
 	{0xEC, 1, {0x00} },
-
 
 	{0xFF, 1, {0x20} },
 	{0xFB, 1, {0x01} },
@@ -865,7 +864,7 @@ static struct LCM_setting_table init_setting_vdo[] = {
 	{0xB0, 1, {0x91} },
 	{0xB1, 1, {0x03} },
 	{0xB2, 1, {0xCF} },
-	{0xB3, 1, {0x00} },/* RN GAMMA SETTING */
+	{0xB3, 1, {0x00} }, /* RN GAMMA SETTING */
 	{0xB4, 1, {0x49} },
 	{0xB5, 1, {0x00} },
 	{0xB6, 1, {0x78} },
@@ -926,7 +925,7 @@ static struct LCM_setting_table init_setting_vdo[] = {
 	{0xED, 1, {0x03} },
 	{0xEE, 1, {0xCF} },
 
-	{0xEF, 1, {0x00} },/* GP GAMMA SETTING */
+	{0xEF, 1, {0x00} }, /* GP GAMMA SETTING */
 	{0xF0, 1, {0x49} },
 	{0xF1, 1, {0x00} },
 	{0xF2, 1, {0x78} },
@@ -939,7 +938,7 @@ static struct LCM_setting_table init_setting_vdo[] = {
 	{0xF9, 1, {0x00} },
 	{0xFA, 1, {0xED} },
 
-	{0xFF, 1, {0x21} },/* CMD2 PAGE1 */
+	{0xFF, 1, {0x21} }, /* CMD2 PAGE1 */
 	{0xFB, 1, {0x01} },
 
 	{0x00, 1, {0x00} },
@@ -1050,7 +1049,7 @@ static struct LCM_setting_table init_setting_vdo[] = {
 	{0x6E, 1, {0x91} },
 	{0x6F, 1, {0x03} },
 	{0x70, 1, {0xCF} },
-	{0x71, 1, {0x00} },/* BP GAMMA SETTING */
+	{0x71, 1, {0x00} }, /* BP GAMMA SETTING */
 	{0x72, 1, {0x49} },
 	{0x73, 1, {0x00} },
 	{0x74, 1, {0x78} },
@@ -1171,26 +1170,31 @@ static struct LCM_setting_table init_setting_vdo[] = {
 	{0xE9, 1, {0x03} },
 	{0xEA, 1, {0xCF} },
 
-	{0xFF, 1, {0x10} }, /* Return  To CMD1 */
+	{0xFF, 1, {0x10} }, /* Return to CMD1 */
 	{REGFLAG_UDELAY, 1, {} },
 	{0x3B, 3, {0x03, 0x0a, 0x0a} },
 
 	{0x35, 1, {0x00} },
-	{0x44, 2, {0x07, 0x78} }, /* set TE event @ line 0x778(1912) for partial update */
+	/* set TE event @line 0x778(1912) for partial update */
+	{0x44, 2, {0x07, 0x78} },
 
-	/* don't reload cmd1 setting from MTP when exit sleep.(or C9 will be overwritten) */
+	/*
+	 * don't reload cmd1 setting from MTP
+	 * when exit sleep.(or C9 will be overwritten)
+	 */
 	{0xFB, 1, {0x01} },
 	/* set partial update option */
-	{0xC9, 11, {0x49, 0x02, 0x05, 0x00, 0x0F, 0x06, 0x67, 0x03, 0x2E, 0x10, 0xF0} },
+	{0xC9, 11, {0x49, 0x02, 0x05, 0x00, 0x0F, 0x06, 0x67,
+		    0x03, 0x2E, 0x10, 0xF0} },
 
-	{0xBB, 1, {0x03} },/* 0x03:video mode  0x10:command mode */
+	{0xBB, 1, {0x03} }, /* 0x03:video mode; 0x10:command mode */
 
-	/*{REGFLAG_DELAY, 200, {} },*/
+	/* {REGFLAG_DELAY, 200, {} }, */
 	{0x11, 0, {} },
 	{REGFLAG_DELAY, 120, {} },
 	{0x29, 0, {} },
-	/*{REGFLAG_DELAY, 200, {} },*/
-	/* ///////////////////CABC SETTING///////// */
+	/* {REGFLAG_DELAY, 200, {} }, */
+	/* CABC SETTING */
 	{0x51, 1, {0x00} },
 	{0x5E, 1, {0x00} },
 	{0x53, 1, {0x24} },
@@ -1204,6 +1208,7 @@ static struct LCM_setting_table lcm_set_window[] = {
 	{REGFLAG_END_OF_TABLE, 0x00, {} }
 };
 #endif
+
 #if 0
 static struct LCM_setting_table lcm_sleep_out_setting[] = {
 	/* Sleep Out */
@@ -1227,22 +1232,22 @@ static struct LCM_setting_table lcm_deep_sleep_mode_in_setting[] = {
 	{REGFLAG_END_OF_TABLE, 0x00, {} }
 };
 #endif
+
 static struct LCM_setting_table bl_level[] = {
 	{0x51, 1, {0xFF} },
 	{REGFLAG_END_OF_TABLE, 0x00, {} }
 };
 
 static void push_table(void *cmdq, struct LCM_setting_table *table,
-	unsigned int count, unsigned char force_update)
+		       unsigned int count, unsigned char force_update)
 {
 	unsigned int i;
-	unsigned cmd;
+	unsigned int cmd;
 
 	for (i = 0; i < count; i++) {
 		cmd = table[i].cmd;
 
 		switch (cmd) {
-
 		case REGFLAG_DELAY:
 			if (table[i].count <= 10)
 				MDELAY(table[i].count);
@@ -1258,17 +1263,17 @@ static void push_table(void *cmdq, struct LCM_setting_table *table,
 			break;
 
 		default:
-			dsi_set_cmdq_V22(cmdq, cmd, table[i].count, table[i].para_list, force_update);
+			dsi_set_cmdq_V22(cmdq, cmd, table[i].count,
+					 table[i].para_list, force_update);
+			break;
 		}
 	}
 }
-
 
 static void lcm_set_util_funcs(const LCM_UTIL_FUNCS *util)
 {
 	memcpy(&lcm_util, util, sizeof(LCM_UTIL_FUNCS));
 }
-
 
 static void lcm_get_params(LCM_PARAMS *params)
 {
@@ -1285,7 +1290,7 @@ static void lcm_get_params(LCM_PARAMS *params)
 	params->physical_height = LCM_PHYSICAL_HEIGHT/1000;
 	params->physical_width_um = LCM_PHYSICAL_WIDTH;
 	params->physical_height_um = LCM_PHYSICAL_HEIGHT;
-	params->density            = LCM_DENSITY;
+	params->density = LCM_DENSITY;
 
 #if (LCM_DSI_CMD_MODE)
 	params->dsi.mode = CMD_MODE;
@@ -1296,7 +1301,7 @@ static void lcm_get_params(LCM_PARAMS *params)
 	params->dsi.switch_mode = CMD_MODE;
 	lcm_dsi_mode = SYNC_PULSE_VDO_MODE;
 #endif
-	LCM_LOGI("lcm_get_params lcm_dsi_mode %d\n", lcm_dsi_mode);
+	LCM_LOGI("%s:lcm_dsi_mode %d\n", __func__, lcm_dsi_mode);
 	params->dsi.switch_mode_enable = 0;
 
 	/* DSI */
@@ -1324,12 +1329,14 @@ static void lcm_get_params(LCM_PARAMS *params)
 	params->dsi.horizontal_backporch = 20;
 	params->dsi.horizontal_frontporch = 40;
 	params->dsi.horizontal_active_pixel = VIRTUAL_WIDTH;
-	/* params->dsi.ssc_disable                                                   = 1; */
+	/* params->dsi.ssc_disable = 1; */
 #ifndef CONFIG_FPGA_EARLY_PORTING
 #if (LCM_DSI_CMD_MODE)
-	params->dsi.PLL_CLOCK = 420;	/* this value must be in MTK suggested table */
+	/* this value must be in MTK suggested table */
+	params->dsi.PLL_CLOCK = 420;
 #else
-	params->dsi.PLL_CLOCK = 440;	/* this value must be in MTK suggested table */
+	/* this value must be in MTK suggested table */
+	params->dsi.PLL_CLOCK = 440;
 #endif
 	params->dsi.PLL_CK_CMD = 420;
 	params->dsi.PLL_CK_VDO = 440;
@@ -1354,20 +1361,28 @@ static void lcm_get_params(LCM_PARAMS *params)
 #ifdef CONFIG_NT35695_LANESWAP
 	params->dsi.lane_swap_en = 1;
 
-	params->dsi.lane_swap[MIPITX_PHY_PORT_0][MIPITX_PHY_LANE_0] = MIPITX_PHY_LANE_CK;
-	params->dsi.lane_swap[MIPITX_PHY_PORT_0][MIPITX_PHY_LANE_1] = MIPITX_PHY_LANE_2;
-	params->dsi.lane_swap[MIPITX_PHY_PORT_0][MIPITX_PHY_LANE_2] = MIPITX_PHY_LANE_3;
-	params->dsi.lane_swap[MIPITX_PHY_PORT_0][MIPITX_PHY_LANE_3] = MIPITX_PHY_LANE_0;
-	params->dsi.lane_swap[MIPITX_PHY_PORT_0][MIPITX_PHY_LANE_CK] = MIPITX_PHY_LANE_1;
-	params->dsi.lane_swap[MIPITX_PHY_PORT_0][MIPITX_PHY_LANE_RX] = MIPITX_PHY_LANE_1;
+	params->dsi.lane_swap[MIPITX_PHY_PORT_0][MIPITX_PHY_LANE_0] =
+							MIPITX_PHY_LANE_CK;
+	params->dsi.lane_swap[MIPITX_PHY_PORT_0][MIPITX_PHY_LANE_1] =
+							MIPITX_PHY_LANE_2;
+	params->dsi.lane_swap[MIPITX_PHY_PORT_0][MIPITX_PHY_LANE_2] =
+							MIPITX_PHY_LANE_3;
+	params->dsi.lane_swap[MIPITX_PHY_PORT_0][MIPITX_PHY_LANE_3] =
+							MIPITX_PHY_LANE_0;
+	params->dsi.lane_swap[MIPITX_PHY_PORT_0][MIPITX_PHY_LANE_CK] =
+							MIPITX_PHY_LANE_1;
+	params->dsi.lane_swap[MIPITX_PHY_PORT_0][MIPITX_PHY_LANE_RX] =
+							MIPITX_PHY_LANE_1;
 #endif
 }
 
 static void lcm_init_power(void)
 {
 #ifndef CONFIG_FPGA_EARLY_PORTING
-	/* display bias is likely inited in lk !!
-	 * for kernel regulator system, we need to enable it first before disable!
+	/*
+	 * display bias is likely inited in lk !!
+	 * for kernel regulator system, we need to
+	 * enable it first before disable!
 	 * so here, if bias is not enabled, we enable it first
 	 */
 	display_bias_enable();
@@ -1387,7 +1402,6 @@ static void lcm_resume_power(void)
 	SET_RESET_PIN(0);
 	display_bias_enable();
 #endif
-
 }
 
 static void lcm_init(void)
@@ -1402,17 +1416,22 @@ static void lcm_init(void)
 	SET_RESET_PIN(1);
 	MDELAY(10);
 	if (lcm_dsi_mode == CMD_MODE) {
-		push_table(NULL, init_setting_cmd, sizeof(init_setting_cmd) / sizeof(struct LCM_setting_table), 1);
-		LCM_LOGI("nt35695----tps6132----lcm mode = cmd mode :%d----\n", lcm_dsi_mode);
+		push_table(NULL, init_setting_cmd,
+			   ARRAY_SIZE(init_setting_cmd), 1);
+		LCM_LOGI("nt35695----tps6132----lcm mode = cmd mode :%d----\n",
+			 lcm_dsi_mode);
 	} else {
-		push_table(NULL, init_setting_vdo, sizeof(init_setting_vdo) / sizeof(struct LCM_setting_table), 1);
-		LCM_LOGI("nt35695----tps6132----lcm mode = vdo mode :%d----\n", lcm_dsi_mode);
+		push_table(NULL, init_setting_vdo,
+			   ARRAY_SIZE(init_setting_vdo), 1);
+		LCM_LOGI("nt35695----tps6132----lcm mode = vdo mode :%d----\n",
+			 lcm_dsi_mode);
 	}
 }
 
 static void lcm_suspend(void)
 {
-	push_table(NULL, lcm_suspend_setting, sizeof(lcm_suspend_setting) / sizeof(struct LCM_setting_table), 1);
+	push_table(NULL, lcm_suspend_setting,
+		   ARRAY_SIZE(lcm_suspend_setting), 1);
 	MDELAY(10);
 	/* SET_RESET_PIN(0); */
 }
@@ -1422,7 +1441,8 @@ static void lcm_resume(void)
 	lcm_init();
 }
 
-static void lcm_update(unsigned int x, unsigned int y, unsigned int width, unsigned int height)
+static void lcm_update(unsigned int x, unsigned int y,
+		       unsigned int width, unsigned int height)
 {
 	unsigned int x0 = x;
 	unsigned int y0 = y;
@@ -1467,24 +1487,23 @@ static unsigned int lcm_compare_id(void)
 	SET_RESET_PIN(1);
 	MDELAY(20);
 
-	array[0] = 0x00023700;	/* read id return two byte,version and id */
+	array[0] = 0x00023700; /* read id return two byte,version and id */
 	dsi_set_cmdq(array, 1, 1);
 
 	read_reg_v2(0xF4, buffer, 2);
-	id = buffer[0];     /* we only need ID */
+	id = buffer[0]; /* we only need ID */
 
 	read_reg_v2(0xDB, buffer, 1);
 	version_id = buffer[0];
 
-	LCM_LOGI("%s,nt35695_id=0x%08x,version_id=0x%x\n", __func__, id, version_id);
+	LCM_LOGI("%s,nt35695_id=0x%08x,version_id=0x%x\n",
+		 __func__, id, version_id);
 
 	if (id == LCM_ID_NT35695 && version_id == 0x81)
 		return 1;
 	else
 		return 0;
-
 }
-
 
 /* return TRUE: need recovery */
 /* return FALSE: No need recovery */
@@ -1508,7 +1527,6 @@ static unsigned int lcm_esd_check(void)
 #else
 	return FALSE;
 #endif
-
 }
 
 static unsigned int lcm_ata_check(unsigned char *buffer)
@@ -1526,19 +1544,20 @@ static unsigned int lcm_ata_check(unsigned char *buffer)
 	unsigned int data_array[3];
 	unsigned char read_buf[4];
 
-	LCM_LOGI("ATA check size = 0x%x,0x%x,0x%x,0x%x\n", x0_MSB, x0_LSB, x1_MSB, x1_LSB);
-	data_array[0] = 0x0005390A;	/* HS packet */
+	LCM_LOGI("ATA check size = 0x%x,0x%x,0x%x,0x%x\n",
+		 x0_MSB, x0_LSB, x1_MSB, x1_LSB);
+	data_array[0] = 0x0005390A; /* HS packet */
 	data_array[1] = (x1_MSB << 24) | (x0_LSB << 16) | (x0_MSB << 8) | 0x2a;
 	data_array[2] = (x1_LSB);
 	dsi_set_cmdq(data_array, 3, 1);
 
-	data_array[0] = 0x00043700;	/* read id return two byte,version and id */
+	data_array[0] = 0x00043700; /* read id return two byte,version and id */
 	dsi_set_cmdq(data_array, 1, 1);
 
 	read_reg_v2(0x2A, read_buf, 4);
 
-	if ((read_buf[0] == x0_MSB) && (read_buf[1] == x0_LSB)
-	    && (read_buf[2] == x1_MSB) && (read_buf[3] == x1_LSB))
+	if ((read_buf[0] == x0_MSB) && (read_buf[1] == x0_LSB) &&
+	    (read_buf[2] == x1_MSB) && (read_buf[3] == x1_LSB))
 		ret = 1;
 	else
 		ret = 0;
@@ -1551,7 +1570,7 @@ static unsigned int lcm_ata_check(unsigned char *buffer)
 	x1_MSB = ((x1 >> 8) & 0xFF);
 	x1_LSB = (x1 & 0xFF);
 
-	data_array[0] = 0x0005390A;	/* HS packet */
+	data_array[0] = 0x0005390A; /* HS packet */
 	data_array[1] = (x1_MSB << 24) | (x0_LSB << 16) | (x0_MSB << 8) | 0x2a;
 	data_array[2] = (x1_LSB);
 	dsi_set_cmdq(data_array, 3, 1);
@@ -1563,27 +1582,33 @@ static unsigned int lcm_ata_check(unsigned char *buffer)
 
 static void lcm_setbacklight_cmdq(void *handle, unsigned int level)
 {
-
 	LCM_LOGI("%s,nt35695 backlight: level = %d\n", __func__, level);
 
 	bl_level[0].para_list[0] = level;
 
-	push_table(handle, bl_level, sizeof(bl_level) / sizeof(struct LCM_setting_table), 1);
+	push_table(handle, bl_level, ARRAY_SIZE(bl_level), 1);
 }
 
 static void *lcm_switch_mode(int mode)
 {
 #ifndef BUILD_LK
-/* customization: 1. V2C config 2 values, C2V config 1 value; 2. config mode control register */
-	if (mode == 0) {	/* V2C */
+	/*
+	 * customization:
+	 *   1. V2C config 2 values, C2V config 1 value;
+	 *   2. config mode control register
+	 */
+	if (mode == 0) { /* V2C */
 		lcm_switch_mode_cmd.mode = CMD_MODE;
-		lcm_switch_mode_cmd.addr = 0xBB;	/* mode control addr */
-		lcm_switch_mode_cmd.val[0] = 0x13;	/* enabel GRAM firstly, ensure writing one frame to GRAM */
-		lcm_switch_mode_cmd.val[1] = 0x10;	/* disable video mode secondly */
-	} else {		/* C2V */
+		lcm_switch_mode_cmd.addr = 0xBB; /* mode control addr */
+		/* enabel GRAM firstly, ensure writing one frame to GRAM */
+		lcm_switch_mode_cmd.val[0] = 0x13;
+		/* disable video mode secondly */
+		lcm_switch_mode_cmd.val[1] = 0x10;
+	} else { /* C2V */
 		lcm_switch_mode_cmd.mode = SYNC_PULSE_VDO_MODE;
 		lcm_switch_mode_cmd.addr = 0xBB;
-		lcm_switch_mode_cmd.val[0] = 0x03;	/* disable GRAM and enable video mode */
+		/* disable GRAM and enable video mode */
+		lcm_switch_mode_cmd.val[0] = 0x03;
 	}
 	return (void *)(&lcm_switch_mode_cmd);
 #else
@@ -1593,7 +1618,8 @@ static void *lcm_switch_mode(int mode)
 
 #if (LCM_DSI_CMD_MODE)
 
-/* partial update restrictions:
+/**
+ * partial update restrictions:
  * 1. roi width must be 1080 (full lcm width)
  * 2. vertical start (y) must be multiple of 16
  * 3. vertical height (h) must be multiple of 16
@@ -1610,7 +1636,10 @@ static void lcm_validate_roi(int *x, int *y, int *width, int *height)
 	y1 = round_down(y1, 16);
 	h = y2 - y1 + 1;
 
-	/* in some cases, roi maybe empty. In this case we need to use minimu roi */
+	/*
+	 * in some cases, roi maybe empty.
+	 * In this case we need to use minimu roi
+	 */
 	if (h < 16)
 		h = 16;
 
@@ -1619,11 +1648,12 @@ static void lcm_validate_roi(int *x, int *y, int *width, int *height)
 	/* check height again */
 	if (y1 >= FRAME_HEIGHT || y1 + h > FRAME_HEIGHT) {
 		/* assign full screen roi */
-		pr_info("%s calc error,assign full roi:y=%d,h=%d\n", __func__, *y, *height);
+		pr_info("%s calc error,assign full roi:y=%d,h=%d\n",
+			__func__, *y, *height);
 		y1 = 0;
 		h = FRAME_HEIGHT;
 	}
-	/*	*x, *y, *width, *height, x1, y1, w, h);*/
+
 	*x = x1;
 	*width = w;
 	*y = y1;
@@ -1632,12 +1662,12 @@ static void lcm_validate_roi(int *x, int *y, int *width, int *height)
 #endif
 
 #if (LCM_DSI_CMD_MODE)
-LCM_DRIVER nt35695B_fhd_dsi_cmd_auo_rt5081_hdp_lcm_drv = {
-	.name = "nt35695B_fhd_dsi_cmd_auo_rt5081_hdp_drv",
+LCM_DRIVER nt35695B_fhd_dsi_cmd_auo_rt5081_hdp_19_9_lcm_drv = {
+	.name = "nt35695B_fhd_dsi_cmd_auo_rt5081_hdp_19_9_drv",
 #else
 
-LCM_DRIVER nt35695B_fhd_dsi_vdo_auo_rt5081_hdp_lcm_drv = {
-	.name = "nt35695B_fhd_dsi_vdo_auo_rt5081_hdp_drv",
+LCM_DRIVER nt35695B_fhd_dsi_vdo_auo_rt5081_hdp_19_9_lcm_drv = {
+	.name = "nt35695B_fhd_dsi_vdo_auo_rt5081_hdp_19_9_drv",
 #endif
 	.set_util_funcs = lcm_set_util_funcs,
 	.get_params = lcm_get_params,
@@ -1656,5 +1686,4 @@ LCM_DRIVER nt35695B_fhd_dsi_vdo_auo_rt5081_hdp_lcm_drv = {
 #if (LCM_DSI_CMD_MODE)
 	.validate_roi = lcm_validate_roi,
 #endif
-
 };
