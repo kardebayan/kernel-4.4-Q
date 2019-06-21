@@ -19,29 +19,21 @@ subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/performance/perf_ioctl/ \
 obj-y += perfmgr_main.o
 obj-y += base/
 
+obj-$(CONFIG_MTK_PERF_OBSERVER) += observer/
+obj-$(CONFIG_MTK_RESYM) += resym/
+
 ifeq (,$(findstring mt8,$(CONFIG_MTK_PLATFORM)))
 	obj-$(CONFIG_MTK_BASE_POWER) += boost_ctrl/
 	#obj-$(CONFIG_MTK_BASE_POWER) += tchbst/
 endif
 
-obj-y += cpu_loading/
-
-obj-$(CONFIG_MTK_LOAD_TRACKER) += load_track/
-
 obj-y += perf_ioctl/
+obj-$(CONFIG_MTK_FPSGO_V3) += fpsgo_v3/
 
-ifeq ($(CONFIG_MTK_FPSGO), y)
-	ifeq ($(CONFIG_MACH_MT6771), y)
-		ccflags-y += -DCONFIG_MTK_FPSGO_V2
-		obj-y += fpsgo_v2/
-	else ifeq ($(CONFIG_MACH_MT6775), y)
-		ccflags-y += -DCONFIG_MTK_FPSGO_V2
-		obj-y += fpsgo_v2/
-	else
-		obj-y += fpsgo/
-	endif
+ifeq ($(CONFIG_THERMAL),y)
+obj-$(CONFIG_MTK_EARA_THERMAL) += eara_thermal/
 endif
 
-#ifneq ($(wildcard $(srctree)/drivers/misc/mediatek/performance/perfmgr/$(MTK_PLATFORM)/),)
-#		obj-y += fbc/
-#endif
+obj-$(CONFIG_MTK_LOAD_TRACKER) += load_track/
+obj-$(CONFIG_MTK_LOAD_TRACKER) += uload_ind/
+
