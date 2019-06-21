@@ -27,6 +27,7 @@
 #define SCP_RECOVERY_SUPPORT			(1)
 /* scp recovery timeout value (ms)*/
 #define SCP_SYS_RESET_TIMEOUT			1000
+#define SCP_LOG_FILTER_SUPPORT			(0)
 
 /* scp aed definition*/
 #define SCP_AED_STR_LEN		(512)
