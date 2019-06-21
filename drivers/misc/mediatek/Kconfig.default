@@ -34,6 +34,9 @@ config ANDROID_DEFAULT_SETTING
 	select EVENTFD
 	select FUTEX
 	select HARDENED_USERCOPY
+        select HID_PLANTRONICS
+	select HID_MULTITOUCH
+	select HID_SONY
 	select HIGH_RES_TIMERS
 	select IKCONFIG
 	select IKCONFIG_PROC
@@ -189,11 +192,9 @@ config ANDROID_DEFAULT_SETTING
 	select USB_CONFIGFS_F_MIDI
 	select USB_CONFIGFS_UEVENT
 	select USB_GADGET
+        select USB_RTL8152
 	select USB_SUPPORT
 	select XFRM_USER
-	select HID_PLANTRONICS
-	select HID_MULTITOUCH
-	select HID_SONY
 	help
 	  Select the android base and recommended config by default
 	  to avoid missing basic or common setting
