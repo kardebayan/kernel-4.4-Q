@@ -745,6 +745,8 @@ int spm_mtcmos_ctrl_md1(int state)
 		spm_write(MD1_PWR_CON, spm_read(MD1_PWR_CON) | MD1_SRAM_PDN);
 #ifndef IGNORE_MTCMOS_CHECK
 #endif
+		/* TINFO="Set PWR_RST_B = 0" */
+		spm_write(MD1_PWR_CON, spm_read(MD1_PWR_CON) & ~PWR_RST_B);
 		/* TINFO="Set PWR_ON = 0" */
 		spm_write(MD1_PWR_CON, spm_read(MD1_PWR_CON) & ~PWR_ON);
 		/* TINFO="Set PWR_ON_2ND = 0" */
@@ -761,7 +763,7 @@ int spm_mtcmos_ctrl_md1(int state)
 	} else {    /* STA_POWER_ON */
 		/* TINFO="Start to turn on MD1" */
 		/* TINFO="Set PWR_RST_B = 0" */
-		spm_write(MD1_PWR_CON, spm_read(MD1_PWR_CON) & ~PWR_RST_B);
+		/*spm_write(MD1_PWR_CON, spm_read(MD1_PWR_CON) & ~PWR_RST_B);*/
 		/* TINFO="Set PWR_ON = 1" */
 		spm_write(MD1_PWR_CON, spm_read(MD1_PWR_CON) | PWR_ON);
 		/* TINFO="Set PWR_ON_2ND = 1" */
