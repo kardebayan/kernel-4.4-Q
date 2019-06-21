@@ -18,6 +18,7 @@
 #endif
 
 #define TAG "PERF_IOCTL"
+#define API_READY	0
 
 void (*fpsgo_notify_qudeq_fp)(int qudeq, unsigned int startend, unsigned long long bufID, int pid, int queue_SF);
 void (*fpsgo_notify_intended_vsync_fp)(int pid, unsigned long long frame_id);
@@ -113,7 +114,9 @@ static long device_ioctl(struct file *filp,
 			fpsgo_notify_connect_fp(msgKM->tid, msgKM->bufID, msgKM->connectedAPI);
 		break;
 	case FPSGO_TOUCH:
+#if API_READY
 		fbc_ioctl(cmd, msgKM->frame_time);
+#endif
 		break;
 	case FPSGO_ACT_SWITCH:
 		/* FALLTHROUGH */
@@ -133,8 +136,10 @@ static long device_ioctl(struct file *filp,
 	case FPSGO_ACT_SWITCH:
 		/* FALLTHROUGH */
 	case FPSGO_GAME:
+#if API_READY
 		/* FALLTHROUGH */
 		fbc_ioctl(cmd, msgKM->frame_time);
+#endif
 		break;
 	case FPSGO_INTENDED_VSYNC:
 		/* FALLTHROUGH */
@@ -143,9 +148,11 @@ static long device_ioctl(struct file *filp,
 	case FPSGO_NO_RENDER:
 		/* FALLTHROUGH */
 	case FPSGO_SWAP_BUFFER:
+#if API_READY
 		if (msgKM->render_method == HWUI ||
 				msgKM->render_method == SWUI)
 			fbc_ioctl(cmd, msgKM->frame_time);
+#endif
 		break;
 	case FPSGO_QUEUE:
 		/* FALLTHROUGH */
@@ -164,8 +171,10 @@ static long device_ioctl(struct file *filp,
 	case FPSGO_TOUCH:
 		/* FALLTHROUGH */
 	case FPSGO_FRAME_COMPLETE:
+#if API_READY
 		touch_boost_ioctl(cmd, msgKM->frame_time);
-		break;
+		#endif
+break;
 	case FPSGO_QUEUE:
 		/* FALLTHROUGH */
 	case FPSGO_DEQUEUE:
@@ -217,7 +226,9 @@ static int __init init_perfctl(void)
 #ifdef CONFIG_MTK_FPSGO_FBT_UX
 	init_fbc();
 #else
+#if	API_READY
 	init_touch_boost();
+#endif /* API_READY */
 #endif
 
 	ret_val = register_chrdev(DEV_MAJOR, DEV_NAME, &Fops);

@@ -11,30 +11,24 @@
 # GNU General Public License for more details.
 #
 
-obj-y += fliper/
-obj-y += perfmgr/
-obj-y += smart/
-obj-y += eas_controller/
+subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/performance/perf_ioctl/ \
+		    -I$(srctree)/drivers/misc/mediatek/performance/include/ \
+		    -I$(srctree)/drivers/misc/mediatek/base/power/include/ \
 
-obj-$(CONFIG_MACH_MT6757) += perf_ioctl/
-obj-$(CONFIG_MACH_MT6763) += perf_ioctl/
-obj-$(CONFIG_MACH_MT6739) += perf_ioctl/
-obj-$(CONFIG_MACH_MT6758) += perf_ioctl/
-obj-$(CONFIG_MACH_MT6771) += perf_ioctl/
-obj-$(CONFIG_MACH_MT6775) += perf_ioctl/
 
-obj-$(CONFIG_MACH_MT6799) += legacy_controller/
-obj-$(CONFIG_MACH_MT6757) += legacy_controller/
-obj-$(CONFIG_MACH_MT6759) += legacy_controller/
-obj-$(CONFIG_MACH_MT6763) += legacy_controller/
-obj-$(CONFIG_MACH_MT6739) += legacy_controller/
-obj-$(CONFIG_MACH_MT6758) += legacy_controller/
-obj-$(CONFIG_MACH_MT6771) += legacy_controller/
-obj-$(CONFIG_MACH_MT6775) += legacy_controller/
+obj-y += perfmgr_main.o
+obj-y += base/
+
+ifeq (,$(findstring mt8,$(CONFIG_MTK_PLATFORM)))
+	obj-$(CONFIG_MTK_BASE_POWER) += boost_ctrl/
+	#obj-$(CONFIG_MTK_BASE_POWER) += tchbst/
+endif
 
 obj-y += cpu_loading/
 
 obj-$(CONFIG_MTK_LOAD_TRACKER) += load_track/
+
+obj-y += perf_ioctl/
 
 ifeq ($(CONFIG_MTK_FPSGO), y)
 	ifeq ($(CONFIG_MACH_MT6771), y)
@@ -48,6 +42,6 @@ ifeq ($(CONFIG_MTK_FPSGO), y)
 	endif
 endif
 
-ifneq ($(wildcard $(srctree)/drivers/misc/mediatek/performance/perfmgr/$(MTK_PLATFORM)/),)
-		obj-y += fbc/
-endif
+#ifneq ($(wildcard $(srctree)/drivers/misc/mediatek/performance/perfmgr/$(MTK_PLATFORM)/),)
+#		obj-y += fbc/
+#endif
