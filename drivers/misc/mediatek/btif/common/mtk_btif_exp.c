@@ -36,7 +36,7 @@ p_mtk_btif btif_exp_srh_id(unsigned long u_id)
 			if (u_id == p_user->u_id) {
 				p_btif = p_user->p_btif;
 				BTIF_DBG_FUNC
-				    ("BTIF's user id(%d), p_btif(%p)\n",
+				    ("BTIF's user id(%lu), p_btif(%p)\n",
 				     p_user->u_id, p_btif);
 				break;
 			}
