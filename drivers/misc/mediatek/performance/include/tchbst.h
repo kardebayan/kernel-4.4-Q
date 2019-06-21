@@ -23,9 +23,9 @@
 #include <linux/workqueue.h>
 
 
-#include "cpu_ctrl.h"
 #include "eas_ctrl.h"
 #if 0
+#include "cpu_ctrl.h"
 #include "fpsgo_common.h"
 #endif
 #include "perf_ioctl.h"
