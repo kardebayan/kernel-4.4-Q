@@ -34,17 +34,14 @@
 #include <linux/atomic.h>
 #include <linux/irq.h>
 #include <linux/syscore_ops.h>
+#include <mt-plat/aee.h>
 #include <mt-plat/mtk_secure_api.h>
 
 /*#define ATF_LOGGER_DEBUG*/
 
-#define ATF_LOG_CTRL_BUF_SIZE 256
+#define ATF_LOG_CTRL_BUF_SIZE 512
 #define ATF_CRASH_MAGIC_NO	0xdead1abf
 #define ATF_LAST_MAGIC_NO	0x41544641
-
-/* define a pattern for generate ATF crash report */
-#define GENERATE_ATF_CRASH_REPORT 0xCA7FDEAD
-#define GENERATE_ATF_CRASH_STRING_PATTERN "CA7FDEAD"
 
 #define atf_log_lock()        spin_lock(&atf_logger_lock)
 #define atf_log_unlock()      spin_unlock(&atf_logger_lock)
@@ -68,14 +65,19 @@ union atf_log_ctl_t {
 		unsigned int atf_irq_count;
 		unsigned int atf_reader_alive;
 		unsigned long long atf_write_seq;   /*  0x20 */
-		unsigned long long atf_read_seq;/* useless both in ATF and atf_logger */
+		/* useless both in ATF and atf_logger */
+		unsigned long long atf_read_seq;
 		unsigned int atf_aee_dbg_buf_addr;  /*  0x30 */
 		unsigned int atf_aee_dbg_buf_size;
 		unsigned int atf_crash_log_addr;
 		unsigned int atf_crash_log_size;
 		unsigned int atf_crash_flag;        /*  0x40 */
-		unsigned int padding;  /* padding for next 8 bytes alignment variable */
-		unsigned long long atf_except_write_pos_per_cpu[10]; /* 0x48 */
+		/* for FIQ/IRQ footprint, print in crash log*/
+		unsigned int atf_crash_write_pos;
+		unsigned long long except_write_pos_per_cpu[AEE_MTK_CPU_NUMS];
+		unsigned long long fiq_irq_enter_timestamp[AEE_MTK_CPU_NUMS];
+		unsigned long long fiq_irq_quit_timestamp[AEE_MTK_CPU_NUMS];
+		unsigned int irq_num[AEE_MTK_CPU_NUMS];
 	} info;
 	unsigned char data[ATF_LOG_CTRL_BUF_SIZE];
 };
@@ -92,7 +94,8 @@ static unsigned int atf_buf_len;
 static unsigned char *atf_log_vir_addr;
 static unsigned int atf_log_len;
 
-static size_t atf_log_dump_nolock(unsigned char *buffer, struct ipanic_atf_log_rec *rec, size_t size)
+static size_t atf_log_dump_nolock(unsigned char *buffer,
+	struct ipanic_atf_log_rec *rec, size_t size)
 {
 	unsigned int len;
 	unsigned int least;
@@ -101,14 +104,16 @@ static size_t atf_log_dump_nolock(unsigned char *buffer, struct ipanic_atf_log_r
 
 	local_write_index = atf_buf_vir_ctl->info.atf_write_pos;
 	/* find the first letter to read */
-	while ((local_write_index + atf_log_len - rec->start_idx) % atf_log_len > 0) {
+	while ((local_write_index +
+		atf_log_len - rec->start_idx) % atf_log_len > 0) {
 		if (*(atf_log_vir_addr + rec->start_idx) != 0)
 			break;
 		rec->start_idx++;
 		if (rec->start_idx == atf_log_len)
 			rec->start_idx = 0;
 	}
-	least = (local_write_index + atf_buf_len - rec->start_idx) % atf_buf_len;
+	least = (local_write_index +
+		atf_buf_len - rec->start_idx) % atf_buf_len;
 	if (size > least)
 		size = least;
 	len = min(size, (size_t)(atf_log_len - rec->start_idx));
@@ -124,8 +129,8 @@ static size_t atf_log_dump_nolock(unsigned char *buffer, struct ipanic_atf_log_r
 	rec->start_idx %= atf_log_len;
 	return size;
 }
-/* static size_t atf_log_dump(unsigned char *buffer, unsigned int start, size_t size) */
-static size_t atf_log_dump(unsigned char *buffer, struct ipanic_atf_log_rec *rec, size_t size)
+static size_t atf_log_dump(unsigned char *buffer,
+		struct ipanic_atf_log_rec *rec, size_t size)
 {
 	size_t ret;
 
@@ -154,17 +159,16 @@ size_t ipanic_atflog_buffer(void *data, unsigned char *buffer, size_t sz_buffer)
 	}
 	if (rec->has_read == 0) {
 		if (atf_buf_vir_ctl->info.atf_write_seq < atf_log_len
-				&& atf_buf_vir_ctl->info.atf_write_seq < sz_buffer)
+			&& atf_buf_vir_ctl->info.atf_write_seq < sz_buffer)
 			rec->start_idx = 0;
 		else {
 			/* atf_log_lock(); */
 			local_write_index = atf_buf_vir_ctl->info.atf_write_pos;
 			/* atf_log_unlock(); */
-			rec->start_idx = (local_write_index + atf_log_len - rec->total_size) % atf_log_len;
+			rec->start_idx = (local_write_index +
+				atf_log_len - rec->total_size) % atf_log_len;
 		}
 	}
-	/* count = atf_log_dump_nolock(buffer, (rec->start_idx + rec->has_read) % atf_log_len, sz_buffer); */
-	/* count = atf_log_dump_nolock(buffer, rec, sz_buffer); */
 	count = atf_log_dump(buffer, rec, sz_buffer);
 	/* pr_notice("ipanic_atf_log: dump %d\n", count); */
 	rec->has_read += count;
@@ -173,17 +177,27 @@ size_t ipanic_atflog_buffer(void *data, unsigned char *buffer, size_t sz_buffer)
 	return count;
 }
 
-static ssize_t atf_log_write(struct file *file, const char __user *buf, size_t count, loff_t *pos)
+static ssize_t atf_log_write(struct file *file,
+	const char __user *buf, size_t count, loff_t *pos)
 {
-	char kernel_buf[10];
 	unsigned long ret;
+	unsigned long param;
 
-	ret = copy_from_user(kernel_buf, buf, 8);
-	if (!strncmp((const char *) GENERATE_ATF_CRASH_STRING_PATTERN,
-				(const char *) kernel_buf,
-				(__kernel_size_t) 8)) {
-		mt_secure_call(MTK_SIP_KERNEL_GIC_DUMP, 0, 0, GENERATE_ATF_CRASH_REPORT);
+	ret = -1;
+	param = -1;
 
+	if (count < 12) {
+		/* for coverity check */
+		/* use kstrtoul_from_user() instead of */
+		/* copy_from_user() and kstrtoul() */
+		ret = kstrtoul_from_user(buf, count, 16, &param);
+	}
+
+	pr_notice("[%s]param:0x%lx, count:%zu, ret:%ld\n",
+		__func__, param, count, ret);
+	if (ret == 0x0) {
+		mt_secure_call(MTK_SIP_KERNEL_ATF_DEBUG,
+			param, 0, 0, 0);
 	} else {
 		wake_up_interruptible(&atf_log_wq);
 	}
@@ -203,7 +217,8 @@ static ssize_t do_read_log_to_usr(char __user *buf, size_t count)
 	local_read_index = atf_buf_vir_ctl->info.atf_read_pos;
 
 	/* check copy length */
-	copy_len = (local_write_index + atf_log_len - local_read_index) % atf_log_len;
+	copy_len = (local_write_index +
+		atf_log_len - local_read_index) % atf_log_len;
 
 	/* if copy length < count, just copy the "copy length" */
 	if (count > copy_len)
@@ -212,7 +227,8 @@ static ssize_t do_read_log_to_usr(char __user *buf, size_t count)
 	if (local_write_index > local_read_index) {
 		/* write (right) - read (left) */
 		/* --------R-------W-----------*/
-		if (copy_to_user(buf, atf_log_vir_addr + local_read_index, count))
+		if (copy_to_user(buf,
+			atf_log_vir_addr + local_read_index, count))
 			return -EFAULT;
 	} else {
 		/* turn around to the head */
@@ -222,13 +238,18 @@ static ssize_t do_read_log_to_usr(char __user *buf, size_t count)
 		/* check buf space is enough to copy */
 		if (count > right) {
 			/* if space is enough to copy */
-			if (copy_to_user(buf, atf_log_vir_addr + local_read_index, right))
+			if (copy_to_user(buf,
+				atf_log_vir_addr + local_read_index, right))
 				return -EFAULT;
-			if (copy_to_user((buf + right), atf_log_vir_addr, count - right))
+			if (copy_to_user((buf + right),
+				atf_log_vir_addr, count - right))
 				return -EFAULT;
 		} else {
-			/* if count is only enough to copy right or count, just copy right or count */
-			if (copy_to_user(buf, atf_log_vir_addr + local_read_index, count))
+			/* if count is only enough to copy right or count,
+			 * just copy right or count.
+			 */
+			if (copy_to_user(buf,
+				atf_log_vir_addr + local_read_index, count))
 				return -EFAULT;
 		}
 	}
@@ -244,7 +265,8 @@ static int atf_log_fix_reader(void)
 	if (atf_buf_vir_ctl->info.atf_write_seq < atf_log_len)
 		atf_buf_vir_ctl->info.atf_read_pos = 0;
 	else
-		atf_buf_vir_ctl->info.atf_read_pos = atf_buf_vir_ctl->info.atf_write_pos;
+		atf_buf_vir_ctl->info.atf_read_pos =
+				atf_buf_vir_ctl->info.atf_write_pos;
 	return 0;
 }
 
@@ -274,7 +296,8 @@ static int atf_log_release(struct inode *ignored, struct file *file)
 	return 0;
 }
 
-static ssize_t atf_log_read(struct file *file, char __user *buf, size_t count, loff_t *f_pos)
+static ssize_t atf_log_read(struct file *file,
+	char __user *buf, size_t count, loff_t *f_pos)
 {
 	ssize_t ret;
 	unsigned int write_pos;
@@ -324,19 +347,24 @@ start:
 
 static unsigned int atf_log_poll(struct file *file, poll_table *wait)
 {
-	unsigned int ret = POLLOUT | POLLWRNORM;
+	unsigned int ret = 0;
 
 	if (!(file->f_mode & FMODE_READ))
 		return ret;
+
 	poll_wait(file, &atf_log_wq, wait);
+
 	atf_log_lock();
-	if (atf_buf_vir_ctl->info.atf_write_pos != atf_buf_vir_ctl->info.atf_read_pos)
+	if (atf_buf_vir_ctl->info.atf_write_pos !=
+		atf_buf_vir_ctl->info.atf_read_pos)
 		ret |= POLLIN | POLLRDNORM;
 	atf_log_unlock();
+
 	return ret;
 }
 
-static long atf_log_ioctl(struct file *flip, unsigned int cmd, unsigned long arg)
+static long atf_log_ioctl(struct file *flip,
+	unsigned int cmd, unsigned long arg)
 {
 	return 0;
 }
@@ -359,7 +387,8 @@ static struct miscdevice atf_log_dev = {
 	.mode       = 0644,
 };
 
-static int __init atf_log_dt_scan_memory(unsigned long node, const char *uname, int depth, void *data)
+static int __init atf_log_dt_scan_memory(unsigned long node,
+	const char *uname, int depth, void *data)
 {
 	char *type = (char *)of_get_flat_dt_prop(node, "device_type", NULL);
 	__be32 *reg, *endp;
@@ -385,32 +414,32 @@ static int __init atf_log_dt_scan_memory(unsigned long node, const char *uname, 
 	while ((endp - reg) >= (dt_root_addr_cells + dt_root_size_cells)) {
 		u64 base, size;
 
-		base = dt_mem_next_cell(dt_root_addr_cells, (const __be32 **)&reg);
-		size = dt_mem_next_cell(dt_root_size_cells, (const __be32 **)&reg);
+		base = dt_mem_next_cell(dt_root_addr_cells,
+			(const __be32 **)&reg);
+		size = dt_mem_next_cell(dt_root_size_cells,
+			(const __be32 **)&reg);
 
 		if (size == 0)
 			continue;
-		/* pr_notice( */
-		/* "[PHY layout]DRAM size (dt) :  0x%llx - 0x%llx  (0x%llx)\n", */
-		/* (unsigned long long)base, */
-		/* (unsigned long long)base + (unsigned long long)size - 1, */
-		/* (unsigned long long)size); */
 	}
 	*(unsigned long *)data = node;
 	return node;
 }
 
-static unsigned long long __init atf_log_get_from_dt(unsigned long *phy_addr, unsigned int *len)
+static unsigned long long __init atf_log_get_from_dt(
+	unsigned long *phy_addr, unsigned int *len)
 {
 	unsigned long node = 0;
 	struct mem_desc *mem_desc = NULL;
 
 	if (of_scan_flat_dt(atf_log_dt_scan_memory, &node)) {
-		mem_desc = (struct mem_desc *)of_get_flat_dt_prop(node, "tee_reserved_mem", NULL);
+		mem_desc = (struct mem_desc *)of_get_flat_dt_prop(node,
+			"tee_reserved_mem", NULL);
 		if (mem_desc && mem_desc->size) {
 			pr_notice("ATF reserved memory: 0x%08llx - 0x%08llx (0x%llx)\n",
-					mem_desc->start, mem_desc->start+mem_desc->size - 1,
-					mem_desc->size);
+				mem_desc->start,
+				mem_desc->start+mem_desc->size - 1,
+				mem_desc->size);
 		}
 	}
 	if (mem_desc) {
@@ -424,27 +453,37 @@ static unsigned long long __init atf_log_get_from_dt(unsigned long *phy_addr, un
 #ifdef ATF_LOGGER_DEBUG
 void show_atf_log_ctl(void)
 {
-	pr_notice("atf_buf_addr(%p) = 0x%x\n", &(atf_buf_vir_ctl->info.atf_buf_addr),
+	pr_notice("atf_buf_addr(%p) = 0x%x\n",
+			&(atf_buf_vir_ctl->info.atf_buf_addr),
 			atf_buf_vir_ctl->info.atf_buf_addr);
-	pr_notice("atf_buf_size(%p) = 0x%x\n", &(atf_buf_vir_ctl->info.atf_buf_size),
+	pr_notice("atf_buf_size(%p) = 0x%x\n",
+			&(atf_buf_vir_ctl->info.atf_buf_size),
 			atf_buf_vir_ctl->info.atf_buf_size);
-	pr_notice("atf_write_pos(%p) = %u\n", &(atf_buf_vir_ctl->info.atf_write_pos),
+	pr_notice("atf_write_pos(%p) = %u\n",
+			&(atf_buf_vir_ctl->info.atf_write_pos),
 			atf_buf_vir_ctl->info.atf_write_pos);
-	pr_notice("atf_read_pos(%p) = %u\n", &(atf_buf_vir_ctl->info.atf_read_pos),
+	pr_notice("atf_read_pos(%p) = %u\n",
+			&(atf_buf_vir_ctl->info.atf_read_pos),
 			atf_buf_vir_ctl->info.atf_read_pos);
-	pr_notice("atf_buf_lock(%p) = %u\n", &(atf_buf_vir_ctl->info.atf_buf_lock),
+	pr_notice("atf_buf_lock(%p) = %u\n",
+			&(atf_buf_vir_ctl->info.atf_buf_lock),
 			atf_buf_vir_ctl->info.atf_buf_lock);
-	pr_notice("atf_buf_unread_size(%p) = %u\n", &(atf_buf_vir_ctl->info.atf_buf_unread_size),
+	pr_notice("atf_buf_unread_size(%p) = %u\n",
+			&(atf_buf_vir_ctl->info.atf_buf_unread_size),
 			atf_buf_vir_ctl->info.atf_buf_unread_size);
-	pr_notice("atf_irq_count(%p) = %u\n", &(atf_buf_vir_ctl->info.atf_irq_count),
+	pr_notice("atf_irq_count(%p) = %u\n",
+			&(atf_buf_vir_ctl->info.atf_irq_count),
 			atf_buf_vir_ctl->info.atf_irq_count);
-	pr_notice("atf_reader_alive(%p) = %u\n", &(atf_buf_vir_ctl->info.atf_reader_alive),
+	pr_notice("atf_reader_alive(%p) = %u\n",
+			&(atf_buf_vir_ctl->info.atf_reader_alive),
 			atf_buf_vir_ctl->info.atf_reader_alive);
-	pr_notice("atf_write_seq(%p) = %llu\n", &(atf_buf_vir_ctl->info.atf_write_seq),
+	pr_notice("atf_write_seq(%p) = %llu\n",
+			&(atf_buf_vir_ctl->info.atf_write_seq),
 			atf_buf_vir_ctl->info.atf_write_seq);
 }
 
-static void show_data(unsigned long addr, int nbytes, const char *name)
+static void show_data(unsigned long addr,
+	int nbytes, const char *name)
 {
 	int	i, j;
 	int	nlines;
@@ -491,7 +530,7 @@ static void show_data(unsigned long addr, int nbytes, const char *name)
 static irqreturn_t ATF_log_irq_handler(int irq, void *dev_id)
 {
 	if (!atf_buf_vir_ctl->info.atf_reader_alive)
-		pr_err("No alive reader, but still receive irq\n");
+		pr_info("No alive reader, but still receive irq\n");
 	wake_up_interruptible(&atf_log_wq);
 	return IRQ_HANDLED;
 }
@@ -502,9 +541,10 @@ static void atf_time_sync_resume(void)
 	u64 time_to_sync = local_clock();
 
 #ifdef CONFIG_ARM64
-	mt_secure_call(MTK_SIP_KERNEL_TIME_SYNC, time_to_sync, 0, 0);
+	mt_secure_call(MTK_SIP_KERNEL_TIME_SYNC, time_to_sync, 0, 0, 0);
 #else
-	mt_secure_call(MTK_SIP_KERNEL_TIME_SYNC, (u32)time_to_sync, (u32)(time_to_sync >> 32), 0);
+	mt_secure_call(MTK_SIP_KERNEL_TIME_SYNC,
+		(u32)time_to_sync, (u32)(time_to_sync >> 32), 0, 0);
 #endif
 	pr_notice("atf_time_sync: resume sync");
 }
@@ -525,7 +565,7 @@ static int __init atf_logger_probe(struct platform_device *pdev)
 
 	err = misc_register(&atf_log_dev);
 	if (unlikely(err)) {
-		pr_err("atf_log: failed to register device");
+		pr_info("atf_log: failed to register device");
 		return -1;
 	}
 	pr_notice("atf_log: inited");
@@ -533,14 +573,15 @@ static int __init atf_logger_probe(struct platform_device *pdev)
 	/* pass from preloader to LK, then create the dt node in LK */
 	atf_log_get_from_dt(&atf_buf_phy_ctl, &atf_buf_len);    /* TODO */
 	if (atf_buf_len == 0) {
-		pr_err("No atf_log_buffer!\n");
+		pr_info("No atf_log_buffer!\n");
 		return -1;
 	}
 	/* map control header */
 	atf_buf_vir_ctl = ioremap_wc(atf_buf_phy_ctl, ATF_LOG_CTRL_BUF_SIZE);
 	atf_log_len = atf_buf_vir_ctl->info.atf_buf_size;
 	/* map log buffer */
-	atf_log_vir_addr = ioremap_wc(atf_buf_phy_ctl + ATF_LOG_CTRL_BUF_SIZE, atf_log_len);
+	atf_log_vir_addr = ioremap_wc(atf_buf_phy_ctl +
+		ATF_LOG_CTRL_BUF_SIZE, atf_log_len);
 	pr_notice("atf_buf_phy_ctl: 0x%lx\n", atf_buf_phy_ctl);
 	pr_notice("atf_buf_len: %u\n", atf_buf_len);
 	pr_notice("atf_buf_vir_ctl: %p\n", atf_buf_vir_ctl);
@@ -554,27 +595,29 @@ static int __init atf_logger_probe(struct platform_device *pdev)
 
 	irq_num = platform_get_irq(pdev, 0);
 	if (irq_num == -ENXIO) {
-		pr_err("Fail to get atf_logger irq number from device tree\n");
+		pr_info("Fail to get atf_logger irq number from device tree\n");
 		WARN_ON(irq_num == -ENXIO);
 		return -EINVAL;
 	}
 	pr_notice("atf irq num %d.\n", irq_num);
-	if (request_irq(irq_num, (irq_handler_t)ATF_log_irq_handler, IRQF_TRIGGER_NONE, "ATF_irq", NULL) != 0) {
-		pr_crit("Fail to request ATF_log_irq interrupt!\n");
+	if (request_irq(irq_num, (irq_handler_t)ATF_log_irq_handler,
+			IRQF_TRIGGER_NONE, "ATF_irq", NULL) != 0) {
+		pr_info("Fail to request ATF_log_irq interrupt!\n");
 		return -1;
 	}
 
 	/* create /proc/atf_log */
 	atf_log_proc_dir = proc_mkdir("atf_log", NULL);
 	if (atf_log_proc_dir == NULL) {
-		pr_err("atf_log proc_mkdir failed\n");
+		pr_info("atf_log proc_mkdir failed\n");
 		return -ENOMEM;
 	}
 
 	/* create /proc/atf_log/atf_log */
-	atf_log_proc_file = proc_create("atf_log", 0444, atf_log_proc_dir, &atf_log_fops);
+	atf_log_proc_file = proc_create("atf_log", 0444,
+		atf_log_proc_dir, &atf_log_fops);
 	if (atf_log_proc_file == NULL) {
-		pr_err("atf_log proc_create failed at atf_log\n");
+		pr_info("atf_log proc_create failed at atf_log\n");
 		return -ENOMEM;
 	}
 	register_syscore_ops(&atf_time_sync_syscore_ops);
@@ -583,9 +626,10 @@ static int __init atf_logger_probe(struct platform_device *pdev)
 	time_to_sync = local_clock();
 
 #ifdef CONFIG_ARM64
-	mt_secure_call(MTK_SIP_KERNEL_TIME_SYNC, time_to_sync, 0, 0);
+	mt_secure_call(MTK_SIP_KERNEL_TIME_SYNC, time_to_sync, 0, 0, 0);
 #else
-	mt_secure_call(MTK_SIP_KERNEL_TIME_SYNC, (u32)time_to_sync, (u32)(time_to_sync >> 32), 0);
+	mt_secure_call(MTK_SIP_KERNEL_TIME_SYNC,
+		(u32)time_to_sync, (u32)(time_to_sync >> 32), 0, 0);
 #endif
 	pr_notice("atf_time_sync: inited");
 
@@ -623,8 +667,7 @@ static int __init atf_log_init(void)
 
 	ret = platform_driver_register(&atf_logger_driver_probe);
 	if (ret)
-		pr_err("atf logger init FAIL, ret 0x%x!!!\n", ret);
-
+		pr_info("atf logger init FAIL, ret 0x%x!!!\n", ret);
 	return ret;
 }
 
