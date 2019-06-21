@@ -669,8 +669,6 @@ static bool unmap_kernel_at_el0(const struct arm64_cpu_capabilities *entry)
 
 	/* List of CPUs that are not vulnerable and don't need KPTI */
 	static const struct midr_range kpti_safe_list[] = {
-		_MIDR_ALL_VERSIONS(MIDR_CAVIUM_THUNDERX2),
-		_MIDR_ALL_VERSIONS(MIDR_BRCM_VULCAN),
 		_MIDR_ALL_VERSIONS(MIDR_CORTEX_A35),
 		_MIDR_ALL_VERSIONS(MIDR_CORTEX_A53),
 		_MIDR_ALL_VERSIONS(MIDR_CORTEX_A55),

@@ -117,6 +117,7 @@
 	asm("mrs_s	%0, " __stringify(reg) : "=r" (__val));		\
 	__val;								\
 })
+
 /*
  * Represent a range of MIDR values for a given CPU model and a
  * range of variant/revision values.
@@ -139,7 +140,7 @@ struct midr_range {
 		.rv_max = MIDR_CPU_VAR_REV(v_max, r_max),	\
 	}
 
-#define _MIDR_ALL_VERSIONS(m) MIDR_RANGE(m, 0, 0, 0xf, 0xf)
+#define _MIDR_ALL_VERSIONS(m) MIDR_IN_RANGE(m, 0, 0, 0xf, 0xf)
 
 static inline bool is_midr_in_range(u32 midr, struct midr_range const *range)
 {
