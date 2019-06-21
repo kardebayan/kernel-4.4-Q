@@ -422,7 +422,7 @@ static void mtk_spi_prepare_transfer(struct spi_master *master,
 		cs_holdtime = cs_time;
 		cs_idletime = cs_time;
 	}
-	if (mdata->dev_comp->enhance_timing) {
+	if (mdata->dev_comp->adjust_reg) {
 		reg_val |= (((cs_hightime - 1) & 0xffff)
 			   << SPI_CFG0_SCK_HIGH_OFFSET);
 		reg_val |= (((cs_lowtime - 1) & 0xffff)
@@ -440,8 +440,6 @@ static void mtk_spi_prepare_transfer(struct spi_master *master,
 			   << SPI_CFG0_SCK_HIGH_OFFSET);
 		reg_val |= (((cs_lowtime - 1) & 0xff) <<
 			SPI_CFG0_SCK_LOW_OFFSET);
-
-		reg_val = 0;
 		reg_val |= (((cs_holdtime - 1) & 0xff) <<
 			SPI_CFG0_CS_HOLD_OFFSET);
 		reg_val |= (((cs_setuptime - 1) & 0xff) <<
