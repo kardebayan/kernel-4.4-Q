@@ -23,9 +23,9 @@
 #define CMDQ_SEC_SHARED_OP_OFFSET (0x300)
 
 /* commanad buffer & metadata */
-#define CMDQ_TZ_CMD_BLOCK_SIZE	 (32 * 1024)
+#define CMDQ_TZ_CMD_BLOCK_SIZE	 (16 * 1024)
 
-#define CMDQ_IWC_MAX_CMD_LENGTH (32 * 1024 / 4)
+#define CMDQ_IWC_MAX_CMD_LENGTH (CMDQ_TZ_CMD_BLOCK_SIZE / 4)
 
 #define CMDQ_IWC_MAX_ADDR_LIST_LENGTH (30)
 
