@@ -1271,6 +1271,7 @@ static inline void user_broadcast_wrapper(int md_id, unsigned int state)
 
 	switch (state) {
 	case GATED:
+		mapped_event = MD_STA_EV_STOP;
 		break;
 	case BOOT_WAITING_FOR_HS1:
 		break;
