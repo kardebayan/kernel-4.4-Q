@@ -569,7 +569,9 @@ int port_kthread_handler(void *arg)
 
 	while (1) {
 		if (skb_queue_empty(&port->rx_skb_list)) {
-			ret = wait_event_interruptible(port->rx_wq, !skb_queue_empty(&port->rx_skb_list));
+			spin_lock_irq(&port->rx_wq.lock);
+			ret = wait_event_interruptible_locked_irq(port->rx_wq, !skb_queue_empty(&port->rx_skb_list));
+			spin_unlock_irq(&port->rx_wq.lock);
 			if (ret == -ERESTARTSYS)
 				continue;	/* FIXME */
 		}
