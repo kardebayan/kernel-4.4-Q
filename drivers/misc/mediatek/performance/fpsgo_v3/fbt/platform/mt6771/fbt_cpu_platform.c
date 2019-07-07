@@ -62,14 +62,15 @@ void fbt_boost_dram(int boost)
 
 void fbt_set_boost_value(unsigned int base_blc)
 {
-	base_blc = clamp(base_blc, 1U, 100U);
-	update_eas_uclamp_min(EAS_UCLAMP_KIR_FPSGO, CGROUP_TA, (int)base_blc);
+	base_blc = (base_blc << 10) / 100U;
+	base_blc = clamp(base_blc, 1U, 1024U);
+	capacity_min_write_for_perf_idx(CGROUP_TA, (int)base_blc);
 	fpsgo_systrace_c_fbt_gm(-100, base_blc, "TA_cap");
 }
 
 void fbt_clear_boost_value(void)
 {
-	update_eas_uclamp_min(EAS_UCLAMP_KIR_FPSGO, CGROUP_TA, 0);
+	capacity_min_write_for_perf_idx(CGROUP_TA, 0);
 	fpsgo_systrace_c_fbt_gm(-100, 0, "TA_cap");
 
 	fbt_notify_CM_limit(0);
@@ -108,5 +109,5 @@ int fbt_get_L_min_ceiling(void)
 
 int fbt_get_default_boost_ta(void)
 {
-	return 0;
+	return 1;
 }

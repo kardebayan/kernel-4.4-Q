@@ -21,7 +21,6 @@
 #include <linux/slab.h>
 #include <linux/sched.h>
 #include <linux/interrupt.h>
-#include <linux/sched/clock.h>
 
 #include <linux/uaccess.h>
 

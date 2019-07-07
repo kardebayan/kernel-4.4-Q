@@ -23,7 +23,6 @@
 #include <linux/vmalloc.h>
 #include <linux/trace_events.h>
 #include <linux/module.h>
-#include <linux/sched/clock.h>
 #include <linux/cpumask.h>
 
 #include <mt-plat/fpsgo_common.h>

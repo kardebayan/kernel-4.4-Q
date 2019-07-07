@@ -20,6 +20,7 @@
 #include <mt-plat/mtk_perfobserver.h>
 
 #define TAG "PERF_IOCTL"
+#define API_READY 0
 
 void (*fpsgo_notify_qudeq_fp)(int qudeq,
 		unsigned int startend,
@@ -332,7 +333,9 @@ static long device_ioctl(struct file *filp,
 				msgKM->start);
 		break;
 	case FPSGO_TOUCH:
+#if API_READY
 		usrtch_ioctl(cmd, msgKM->frame_time);
+#endif
 		break;
 	case FPSGO_VSYNC:
 		if (fpsgo_notify_vsync_fp)

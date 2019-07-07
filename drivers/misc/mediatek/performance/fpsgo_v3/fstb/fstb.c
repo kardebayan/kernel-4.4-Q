@@ -28,7 +28,6 @@
 #include <linux/average.h>
 #include <linux/topology.h>
 #include <linux/vmalloc.h>
-#include <linux/sched/clock.h>
 #include <asm/div64.h>
 #include <mt-plat/fpsgo_common.h>
 #include "../fbt/include/fbt_cpu.h"
@@ -37,7 +36,6 @@
 #include "fstb.h"
 #include "fstb_usedext.h"
 #include "../fbt/include/fbt_fteh.h"
-#include "eara_job.h"
 #include "fpsgo_usedext.h"
 
 #include <mt-plat/mtk_perfobserver.h>
@@ -63,6 +61,7 @@
 #define fpsgo_systrace_c_fstb_man(pid, val, fmt...) \
 	fpsgo_systrace_c(FPSGO_DEBUG_MANDATORY, pid, val, fmt)
 
+#define API_READY 0
 
 static void fstb_fps_stats(struct work_struct *work);
 static DECLARE_WORK(fps_stats_work,
@@ -659,13 +658,6 @@ static int get_gpu_frame_time(struct FSTB_FRAME_INFO *iter)
 
 }
 
-void (*eara_thrm_frame_start_fp)(int pid,
-	int cpu_time, int vpu_time, int mdla_time,
-	int cpu_cap, int vpu_cap, int mdla_cap,
-	int queuefps, unsigned long long q2q_time,
-	int AI_cross_vpu, int AI_cross_mdla, int AI_bg_vpu,
-	int AI_bg_mdla, ktime_t cur_time);
-
 int fpsgo_fbt2fstb_update_cpu_frame_info(
 		int pid,
 		int tgid,
@@ -719,13 +711,6 @@ int fpsgo_fbt2fstb_update_cpu_frame_info(
 		pfqi.rescue_cpu = 0;
 
 		pob_fpsgo_qtsk_update(POB_FPSGO_QTSK_CPUCAP_UPDATE, &pfqi);
-	}
-
-	if (mid) {
-		fpsgo_fstb2eara_get_exec_time(tgid, mid,
-			&vpu_time_ns, &mdla_time_ns);
-		fpsgo_fstb2eara_get_boost_value(tgid, mid,
-			&vpu_boost, &mdla_boost);
 	}
 
 	mtk_fstb_dprintk(
@@ -839,25 +824,10 @@ int fpsgo_fbt2fstb_update_cpu_frame_info(
 		fpsgo_systrace_c_fstb(pid, (int)iter->m_m_cap, "avg_mdla_cap");
 	}
 
-	if (eara_thrm_frame_start_fp) {
-		int vpu_cross, mdla_cross, vpu_bg, mdla_bg;
-
-		fpsgo_fstb2eara_get_jobs_status(&vpu_cross,
-			&mdla_cross, &vpu_bg, &mdla_bg);
-
-		eara_thrm_frame_start_fp(pid, (int)Runnging_time,
-			(int)vpu_time_ns, (int)mdla_time_ns, Curr_cap,
-			vpu_boost, mdla_boost, iter->queue_fps,
-			Q2Q_time, vpu_cross, mdla_cross,
-			vpu_bg, mdla_bg, cur_time);
-	}
-
 	mutex_unlock(&fstb_lock);
 	return 0;
 }
 
-void (*eara_thrm_enqueue_end_fp)(int pid, int gpu_time, int gpu_freq,
-	unsigned long long enq);
 int fpsgo_comp2fstb_enq_end(int pid, unsigned long long enq)
 {
 	struct FSTB_FRAME_INFO *iter;
@@ -878,10 +848,6 @@ int fpsgo_comp2fstb_enq_end(int pid, unsigned long long enq)
 		mutex_unlock(&fstb_lock);
 		return 0;
 	}
-
-	if (eara_thrm_enqueue_end_fp)
-		eara_thrm_enqueue_end_fp(pid,
-			iter->gpu_time, iter->gpu_freq, enq);
 
 	mutex_unlock(&fstb_lock);
 	return 0;
@@ -1279,7 +1245,6 @@ static int cal_target_fps(struct FSTB_FRAME_INFO *iter)
 		/*decrease*/
 	} else if (iter->target_fps - iter->queue_fps >
 			iter->target_fps * fps_error_threshold / 100) {
-		fpsgo_fstb2eara_notify_fps_bound();
 
 		if (iter->queue_fps < iter->target_fps)
 			target_limit = iter->queue_fps;
@@ -1352,7 +1317,6 @@ static int cal_target_fps(struct FSTB_FRAME_INFO *iter)
 
 }
 
-void (*eara_thrm_gblock_bypass_fp)(int pid, int bypass);
 #define FSTB_SEC_DIVIDER 1000000000
 void fpsgo_fbt2fstb_query_fps(int pid, int *target_fps,
 	int *target_cpu_time, int tgid, unsigned long long mid)
@@ -1396,22 +1360,8 @@ void fpsgo_fbt2fstb_query_fps(int pid, int *target_fps,
 			fpsgo_systrace_c_fstb(pid,
 					iter->gblock_time, "gblock_time");
 			total_time -= iter->gblock_time;
-			if (eara_thrm_gblock_bypass_fp)
-				eara_thrm_gblock_bypass_fp(iter->pid, 1);
-		} else {
-			if (eara_thrm_gblock_bypass_fp)
-				eara_thrm_gblock_bypass_fp(iter->pid, 0);
 		}
-
 		iter->gblock_time = 0ULL;
-
-		if (mid)
-			fpsgo_fstb2eara_optimize_power(mid, tgid,
-				&v_c_time, total_time, iter->m_c_time,
-				iter->m_v_time, iter->m_m_time, iter->m_c_cap,
-				iter->m_v_cap, iter->m_m_cap);
-		else
-			v_c_time = total_time;
 
 	}
 
@@ -1447,8 +1397,10 @@ static void fstb_fps_stats(struct work_struct *work)
 				calculate_fps_limit(iter, target_fps);
 			fpsgo_systrace_c_fstb(iter->pid,
 				iter->target_fps_margin, "target_fps_margin");
+#if API_READY
 			ged_kpi_set_target_FPS_margin(iter->bufid,
 				iter->target_fps, iter->target_fps_margin);
+#endif
 			mtk_fstb_dprintk_always(
 			"%s pid:%d target_fps:%d\n",
 			__func__, iter->pid,
@@ -1489,7 +1441,6 @@ static void fstb_fps_stats(struct work_struct *work)
 	else
 		disable_fstb_timer();
 
-	fpsgo_fstb2eara_notify_fps_active(fstb_active);
 	pob_fpsgo_fstb_stats_update(POB_FPSGO_FSTB_STATS_END, NULL);
 	if (fstb_active == 0)
 		pob_fpsgo_qtsk_update(POB_FPSGO_QTSK_DELALL, NULL);

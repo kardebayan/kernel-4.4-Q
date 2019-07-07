@@ -19,12 +19,10 @@ BASE_TOP = $(FPSGO_TOP)/base
 FBT_TOP = $(FPSGO_TOP)/fbt
 FSTB_TOP = $(FPSGO_TOP)/fstb
 COM_TOP = $(FPSGO_TOP)/composer
-EARA_JOB_TOP = $(FPSGO_TOP)/eara_job
 
 obj-y += fpsgo_main.o
 obj-y += base/
 obj-y += composer/
-obj-y += eara_job/
 
 obj-y += fbt/
 obj-y += fstb/

@@ -1,5 +1,4 @@
-#
-# Copyright (C) 2015 MediaTek Inc.
+# Copyright (C) 2017 MediaTek Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 as
@@ -29,10 +28,6 @@ endif
 
 obj-y += perf_ioctl/
 obj-$(CONFIG_MTK_FPSGO_V3) += fpsgo_v3/
-
-ifeq ($(CONFIG_THERMAL),y)
-obj-$(CONFIG_MTK_EARA_THERMAL) += eara_thermal/
-endif
 
 obj-$(CONFIG_MTK_LOAD_TRACKER) += load_track/
 obj-$(CONFIG_MTK_LOAD_TRACKER) += uload_ind/

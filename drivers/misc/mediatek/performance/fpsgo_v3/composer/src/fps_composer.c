@@ -24,7 +24,6 @@
 #include <linux/version.h>
 #include <linux/mutex.h>
 #include <linux/debugfs.h>
-#include <linux/sched/task.h>
 
 #include <fpsgo_common.h>
 

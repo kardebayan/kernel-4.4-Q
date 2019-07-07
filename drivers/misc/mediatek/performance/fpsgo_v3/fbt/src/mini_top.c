@@ -21,9 +21,6 @@
 #include <linux/math64.h>
 #include <linux/debugfs.h>
 #include <linux/sort.h>
-#include <linux/sched/clock.h>
-#include <linux/sched/task.h>
-#include <linux/sched/cputime.h>
 #if defined(CONFIG_CPU_FREQ) && !defined(CONFIG_MTK_CPU_CTRL_CFP)
 #include <linux/cpufreq.h>
 #endif

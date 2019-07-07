@@ -25,7 +25,6 @@
 #include "fstb.h"
 #include "fps_composer.h"
 #include "xgf.h"
-#include "eara_job.h"
 
 #define CREATE_TRACE_POINTS
 #include <trace/events/fpsgo.h>
@@ -137,39 +136,6 @@ static void fpsgo_notifier_wq_cb_connect(int pid,
 		fpsgo_ctrl2comp_disconnect_api(pid, connectedAPI, id);
 	else
 		fpsgo_ctrl2comp_connect_api(pid, connectedAPI, id);
-}
-
-static void fpsgo_notifier_wq_cb_nn_job_begin(unsigned int tid,
-	unsigned long long mid)
-{
-	FPSGO_LOGI(
-		"[FPSGO_CB] nn_job_begin: tid %d, mid %llu\n",
-		tid, mid);
-
-	if (!fpsgo_is_enable())
-		return;
-
-	fpsgo_ctrl2xgf_nn_job_begin(tid, mid);
-}
-
-static void fpsgo_notifier_wq_cb_nn_job_end(int pid, int tid,
-	unsigned long long mid, int num_step,
-	__s32 *boost, __s32 *device, __u64 *exec_time)
-{
-	int hw_type = BACKGROUND;
-
-	FPSGO_LOGI(
-		"[FPSGO_CB] nn_job_begin: tid %d, mid %llu\n",
-		tid, mid);
-
-	if (!fpsgo_is_enable())
-		return;
-
-	hw_type = fpsgo_ctrl2xgf_nn_job_end(tid, mid);
-
-	if (boost && device && exec_time)
-		fpsgo_ctrl2eara_nn_job_collect(pid, tid, mid,
-			hw_type, num_step, boost, device, exec_time);
 }
 
 static void fpsgo_notifier_wq_cb_bqid(int pid, unsigned long long bufID,
@@ -306,13 +272,8 @@ static void fpsgo_notifier_wq_cb(struct work_struct *psWork)
 		fpsgo_notifier_wq_cb_gblock(vpPush->tid, vpPush->start);
 		break;
 	case FPSGO_NOTIFIER_NN_JOB_BEGIN:
-		fpsgo_notifier_wq_cb_nn_job_begin(vpPush->nn_tid,
-			vpPush->nn_mid);
 		break;
 	case FPSGO_NOTIFIER_NN_JOB_END:
-		fpsgo_notifier_wq_cb_nn_job_end(vpPush->nn_pid, vpPush->nn_tid,
-			vpPush->nn_mid, vpPush->num_step, vpPush->boost,
-			vpPush->device, vpPush->exec_time);
 		break;
 	case FPSGO_NOTIFIER_VSYNC:
 		fpsgo_notifier_wq_cb_vsync(vpPush->cur_ts);
@@ -365,91 +326,6 @@ void fpsgo_notify_qudeq(int qudeq,
 	INIT_WORK(&vpPush->sWork, fpsgo_notifier_wq_cb);
 	queue_work(g_psNotifyWorkQueue, &vpPush->sWork);
 }
-void fpsgo_notify_nn_job_begin(unsigned int tid, unsigned long long mid)
-{
-	struct FPSGO_NOTIFIER_PUSH_TAG *vpPush;
-
-	FPSGO_LOGI(
-		"[FPSGO_CTRL] nn_job_begin: tid %d, mid %llu\n",
-		tid, mid);
-
-	if (!fpsgo_is_enable())
-		return;
-
-	vpPush =
-		(struct FPSGO_NOTIFIER_PUSH_TAG *)
-		fpsgo_alloc_atomic(sizeof(struct FPSGO_NOTIFIER_PUSH_TAG));
-
-	if (!vpPush) {
-		FPSGO_LOGE("[FPSGO_CTRL] OOM\n");
-		return;
-	}
-
-	if (!g_psNotifyWorkQueue) {
-		FPSGO_LOGE("[FPSGO_CTRL] NULL WorkQueue\n");
-		fpsgo_free(vpPush, sizeof(struct FPSGO_NOTIFIER_PUSH_TAG));
-		return;
-	}
-
-	vpPush->ePushType = FPSGO_NOTIFIER_NN_JOB_BEGIN;
-	vpPush->nn_tid = tid;
-	vpPush->nn_mid = mid;
-
-#if 1
-	INIT_WORK(&vpPush->sWork, fpsgo_notifier_wq_cb);
-	queue_work(g_psNotifyWorkQueue, &vpPush->sWork);
-#endif
-}
-
-int fpsgo_get_nn_priority(unsigned int pid, unsigned long long mid)
-{
-	return fpsgo_ctrl2eara_get_nn_priority(pid, mid);
-}
-
-void fpsgo_get_nn_ttime(unsigned int pid, unsigned long long mid,
-	int num_step, __u64 *time)
-{
-	fpsgo_ctrl2eara_get_nn_ttime(pid, mid, num_step, time);
-}
-
-void fpsgo_notify_nn_job_end(int pid, int tid, unsigned long long mid,
-	int num_step, __s32 *boost, __s32 *device, __u64 *exec_time)
-{
-	struct FPSGO_NOTIFIER_PUSH_TAG *vpPush;
-	int size;
-
-	if (!fpsgo_is_enable())
-		return;
-
-	vpPush =
-		(struct FPSGO_NOTIFIER_PUSH_TAG *)
-		fpsgo_alloc_atomic(sizeof(struct FPSGO_NOTIFIER_PUSH_TAG));
-
-	if (!vpPush) {
-		FPSGO_LOGE("[FPSGO_CTRL] OOM\n");
-		return;
-	}
-
-	if (!g_psNotifyWorkQueue) {
-		FPSGO_LOGE("[FPSGO_CTRL] NULL WorkQueue\n");
-		fpsgo_free(vpPush, sizeof(struct FPSGO_NOTIFIER_PUSH_TAG));
-		return;
-	}
-
-	size = num_step * MAX_DEVICE;
-	vpPush->ePushType = FPSGO_NOTIFIER_NN_JOB_END;
-	vpPush->nn_pid = pid;
-	vpPush->nn_tid = tid;
-	vpPush->nn_mid = mid;
-	vpPush->num_step = num_step;
-	vpPush->boost = boost;
-	vpPush->device = device;
-	vpPush->exec_time = exec_time;
-
-	INIT_WORK(&vpPush->sWork, fpsgo_notifier_wq_cb);
-	queue_work(g_psNotifyWorkQueue, &vpPush->sWork);
-}
-
 
 void fpsgo_notify_connect(int pid,
 		int connectedAPI, unsigned long long id)
@@ -831,11 +707,6 @@ static int __init fpsgo_init(void)
 	fpsgo_notify_qudeq_fp = fpsgo_notify_qudeq;
 	fpsgo_notify_connect_fp = fpsgo_notify_connect;
 	fpsgo_notify_bqid_fp = fpsgo_notify_bqid;
-
-	fpsgo_notify_nn_job_begin_fp = fpsgo_notify_nn_job_begin;
-	fpsgo_notify_nn_job_end_fp = fpsgo_notify_nn_job_end;
-	fpsgo_get_nn_priority_fp = fpsgo_get_nn_priority;
-	fpsgo_get_nn_ttime_fp = fpsgo_get_nn_ttime;
 
 	return 0;
 }

@@ -47,8 +47,6 @@
 #include <linux/sched/rt.h>
 #include <linux/sched/deadline.h>
 #include <linux/bsearch.h>
-#include <linux/sched/task.h>
-#include <linux/sched/topology.h>
 
 #include <mt-plat/mtk_perfobserver.h>
 #include <mt-plat/eas_ctrl.h>
@@ -69,7 +67,6 @@
 #include "mini_top.h"
 #include "fps_composer.h"
 #include "fbt_fteh.h"
-#include "eara_job.h"
 #include "mtk_upower.h"
 
 #define GED_VSYNC_MISS_QUANTUM_NS 16666666
