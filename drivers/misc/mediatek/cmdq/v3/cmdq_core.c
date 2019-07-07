@@ -188,6 +188,7 @@ static DEFINE_SPINLOCK(gCmdqExecLock);
 static DEFINE_SPINLOCK(gCmdqRecordLock);
 static DEFINE_MUTEX(gCmdqResourceMutex);
 static DEFINE_MUTEX(gCmdqErrMutex);
+static DEFINE_MUTEX(cmdq_inst_check_mutex);
 
 /* The main context structure */
 static wait_queue_head_t *gCmdWaitQueue;		/* task done notification */
@@ -3568,29 +3569,57 @@ static bool cmdq_core_check_instr_valid(const uint64_t instr)
 	return false;
 }
 
-static int32_t cmdq_core_check_task_valid(struct TaskStruct *pTask)
+static bool cmdq_core_check_user_valid(void *src, u32 size)
 {
-
-	struct CmdBufferStruct *cmd_buffer = NULL;
-	int32_t cmd_size = CMDQ_CMD_BUFFER_SIZE;
-	uint64_t *va;
+	void *buffer;
+	u64 *va;
 	bool ret = true;
+	u32 copy_size;
+	u32 remain_size = size;
+	void *cur_src = src;
+	CMDQ_TIME cost = sched_clock();
 
-	list_for_each_entry(cmd_buffer, &pTask->cmd_buffer_list, listEntry) {
-		if (list_is_last(&cmd_buffer->listEntry,
-			&pTask->cmd_buffer_list))
-			cmd_size -= pTask->buf_available_size;
-
-		for (va = (uint64_t *)cmd_buffer->pVABase; ret &&
-			(unsigned long)(va + 1) <
-			(unsigned long)cmd_buffer->pVABase + cmd_size; va++)
-			ret &= cmdq_core_check_instr_valid(*va);
-
-		if (ret && (*va >> 56) != CMDQ_CODE_JUMP)
-			ret &= cmdq_core_check_instr_valid(*va);
-		if (!ret)
-			break;
+	mutex_lock(&cmdq_inst_check_mutex);
+	if (!gCmdqContext.inst_check_buffer) {
+		gCmdqContext.inst_check_buffer = kmalloc(CMDQ_CMD_BUFFER_SIZE,
+			GFP_KERNEL);
+		if (!gCmdqContext.inst_check_buffer) {
+			CMDQ_ERR("fail to alloc check buffer\n");
+			mutex_unlock(&cmdq_inst_check_mutex);
+			return false;
+		}
 	}
+
+	buffer = gCmdqContext.inst_check_buffer;
+
+	while (remain_size > 0 && ret) {
+		copy_size = remain_size > CMDQ_CMD_BUFFER_SIZE ?
+			CMDQ_CMD_BUFFER_SIZE : remain_size;
+		if (copy_from_user(buffer, cur_src, copy_size)) {
+			CMDQ_ERR("copy from user fail size:%u\n", size);
+			ret = false;
+			break;
+		}
+
+		for (va = (u64 *)buffer;
+			va < (u64 *)(buffer + copy_size); va++) {
+			ret = cmdq_core_check_instr_valid(*va);
+			if (unlikely(!ret))
+				break;
+		}
+
+		remain_size -= copy_size;
+		cur_src += copy_size;
+	}
+
+	mutex_unlock(&cmdq_inst_check_mutex);
+
+	cost = sched_clock() - cost;
+	do_div(cost, 1000);
+
+	CMDQ_MSG("%s size:%u cost:%lluus ret:%s\n", __func__, size, (u64)cost,
+		ret ? "true" : "false");
+
 	return ret;
 }
 
@@ -3627,6 +3656,11 @@ static int32_t cmdq_core_insert_read_reg_command(struct TaskStruct *pTask,
 		copyCmdSize = pCommandDesc->blockSize - 2 * CMDQ_INST_SIZE;
 	else
 		copyCmdSize = pCommandDesc->blockSize;
+
+	if (userSpaceRequest && !cmdq_core_check_user_valid(copyCmdSrc,
+		pCommandDesc->blockSize))
+		return -EFAULT;
+
 	status = cmdq_core_copy_cmd_to_task_impl(pTask, copyCmdSrc,
 		copyCmdSize, userSpaceRequest);
 	if (status < 0)
@@ -3639,9 +3673,6 @@ static int32_t cmdq_core_insert_read_reg_command(struct TaskStruct *pTask,
 		"[CMD] line:%d CMDEnd:%p cmdSize:%d bufferSize:%u block size:%u\n",
 		__LINE__, pTask->pCMDEnd, pTask->commandSize,
 		pTask->bufferSize, pCommandDesc->blockSize);
-
-	if (userSpaceRequest && !cmdq_core_check_task_valid(pTask))
-		return -EFAULT;
 
 	/* If no read request, no post-process needed. Do verify and stop */
 	if (!postInstruction) {
@@ -9567,6 +9598,9 @@ void cmdqCoreDeInitialize(void)
 	cmdq_core_destroy_buffer_pool();
 	/* Deinitialize MDP */
 	cmdq_mdp_deinit();
+
+	kfree(gCmdqContext.inst_check_buffer);
+	gCmdqContext.inst_check_buffer = NULL;
 
 	kfree(g_dts_setting.prefetch_size);
 	g_dts_setting.prefetch_size = NULL;

@@ -795,6 +795,8 @@ struct ContextStruct {
 	/* Delay set CPR start information */
 	u32 delay_cpr_start;
 
+	void *inst_check_buffer;
+
 #ifdef CMDQ_INSTRUCTION_COUNT
 	/* GCE instructions count information */
 	int32_t instructionCountLevel;
