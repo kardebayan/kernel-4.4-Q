@@ -23,8 +23,6 @@
 #include "topo_ctrl.h"
 #include "uload_ind.h"
 
-#define API_READY 0
-
 int clstr_num;
 
 static int perfmgr_probe(struct platform_device *dev)
@@ -105,20 +103,14 @@ static int __init init_perfmgr(void)
 
 #ifdef CONFIG_MTK_BASE_POWER
 	if (!strstr(CONFIG_MTK_PLATFORM, "mt8")) {
-#if API_READY
 		init_tchbst(perfmgr_root);
-#endif
 		init_boostctrl(perfmgr_root);
 	}
 #endif
-#if API_READY
 	init_perfctl(perfmgr_root);
-#endif
 
 #ifdef CONFIG_MTK_LOAD_TRACKER
-#if API_READY
 	init_uload_ind(NULL);
-#endif
 #endif
 	return 0;
 }

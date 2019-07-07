@@ -16,10 +16,11 @@
 #include <linux/proc_fs.h>
 #include <mt-plat/fpsgo_common.h>
 
-
+#include "mtk_perfmgr_internal.h"
+#include "cpu_ctrl.h"
 #include "tchbst.h"
 #include "fstb.h"
-#include "mtk_perfmgr_internal.h"
+#include <mach/mtk_ppm_api.h>
 
 static void notify_touch_up_timeout(void);
 static DECLARE_WORK(mt_touch_timeout_work, (void *) notify_touch_up_timeout);

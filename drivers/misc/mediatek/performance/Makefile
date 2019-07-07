@@ -23,7 +23,7 @@ obj-$(CONFIG_MTK_RESYM) += resym/
 
 ifeq (,$(findstring mt8,$(CONFIG_MTK_PLATFORM)))
 	obj-$(CONFIG_MTK_BASE_POWER) += boost_ctrl/
-	#obj-$(CONFIG_MTK_BASE_POWER) += tchbst/
+	obj-$(CONFIG_MTK_BASE_POWER) += tchbst/
 endif
 
 obj-y += perf_ioctl/
