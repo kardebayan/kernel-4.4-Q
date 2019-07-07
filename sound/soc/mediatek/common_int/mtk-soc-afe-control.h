@@ -376,10 +376,4 @@ int get_usage_digital_block(enum audio_usage_id id);
 int get_usage_digital_block_io(enum audio_usage_id id);
 int mtk_pcm_mmap(struct snd_pcm_substream *substream, struct vm_area_struct *vma);
 
-/*4pin I2S*/
-void Enable4pin_I2S0_I2S3(unsigned int SampleRate, bool low_jitter_on, unsigned int wLenBit);
-void Disable4pin_I2S0_I2S3(void);
-
-extern int I2S0_I2S3_4pin_ctrl;
-
 #endif
