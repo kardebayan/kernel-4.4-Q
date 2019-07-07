@@ -385,6 +385,11 @@ __acquires(&port->port_lock)
 	in = port->port_usb->in;
 	pool = &port->write_pool;
 
+	if (!port->port_usb)
+		return status;
+
+	in = port->port_usb->in;
+
 	while (!port->write_busy && !list_empty(pool)) {
 		struct usb_request	*req;
 		int			len;
