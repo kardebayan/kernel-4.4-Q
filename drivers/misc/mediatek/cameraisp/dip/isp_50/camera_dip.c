@@ -318,6 +318,7 @@ struct wake_lock dip_wake_lock;
 struct wakeup_source isp_mdp_wake_lock;
 #endif
 static int g_bWaitLock;
+static unsigned int g_dip1sterr = DIP_GCE_EVENT_NONE;
 
 /* Get HW modules' base address from device nodes */
 #define DIP_IMGSYS_CONFIG_BASE          (dip_devs[DIP_IMGSYS_CONFIG_IDX].regs)
@@ -2975,6 +2976,16 @@ static long DIP_ioctl(struct file *pFile, unsigned int Cmd, unsigned long Param)
 		}
 		break;
 	}
+	case DIP_GET_GCE_FIRST_ERR: {
+		if (copy_from_user(&g_dip1sterr,
+			(void *)Param,
+			sizeof(unsigned int)) == 0) {
+		} else {
+			LOG_ERR("DIP_GET_GCE_FIRST_ERR failed\n");
+			Ret = -EFAULT;
+		}
+		break;
+	}
 	default:
 	{
 		LOG_ERR("Unknown Cmd(%d)\n", Cmd);
@@ -3170,6 +3181,7 @@ static long DIP_ioctl_compat(struct file *filp, unsigned int cmd, unsigned long 
 		ret = filp->f_op->unlocked_ioctl(filp, DIP_SET_MEM_INFO, (unsigned long)data);
 		return ret;
 	}
+	case DIP_GET_GCE_FIRST_ERR:
 	case DIP_GET_DUMP_INFO:
 	case DIP_WAIT_IRQ:
 	case DIP_CLEAR_IRQ: /* structure (no pointer) */
@@ -3277,6 +3289,7 @@ static signed int DIP_open(
 	g_regScen = 0xa5a5a5a5;
 	spin_unlock((spinlock_t *)(&SpinLockRegScen));
 	/*  */
+	g_dip1sterr = DIP_GCE_EVENT_NONE;
 
 	/* mutex_lock(&gDipMutex); */  /* Protect the Multi Process */
 	g_bIonBufferAllocated = MFALSE;
