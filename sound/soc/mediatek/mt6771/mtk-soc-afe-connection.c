@@ -618,6 +618,15 @@ bool SetI2s0ToVul(unsigned int ConnectionState)
 	return true;
 }
 
+bool SetI2s0ToVul2(unsigned int ConnectionState)
+{
+	SetConnectionState(ConnectionState, Soc_Aud_InterConnectionInput_I00,
+			Soc_Aud_InterConnectionOutput_O32);
+	SetConnectionState(ConnectionState, Soc_Aud_InterConnectionInput_I01,
+			Soc_Aud_InterConnectionOutput_O33);
+	return true;
+}
+
 bool SetDl1ToMrgI2sOut(unsigned int ConnectionState)
 {
 	SetConnectionState(ConnectionState, Soc_Aud_InterConnectionInput_I05,
@@ -812,7 +821,8 @@ static const struct connection_link_t mConnectionLink[] = {
 	{Soc_Aud_AFE_IO_Block_MEM_DL2, Soc_Aud_AFE_IO_Block_GENERAL_SRC_1_OUT, SetIDl2ToGeneralSrc1},
 	{Soc_Aud_AFE_IO_Block_MEM_DL3, Soc_Aud_AFE_IO_Block_GENERAL_SRC_1_OUT, SetIDl3ToGeneralSrc1},
 	{Soc_Aud_AFE_IO_Block_GENERAL_SRC_1_IN, Soc_Aud_AFE_IO_Block_MEM_AWB, SetGeneralSrc1ToAwb},
-	{Soc_Aud_AFE_IO_Block_I2S0, Soc_Aud_AFE_IO_Block_MEM_VUL_DATA2, SetI2s0ToVulData2}
+	{Soc_Aud_AFE_IO_Block_I2S0, Soc_Aud_AFE_IO_Block_MEM_VUL_DATA2, SetI2s0ToVulData2},
+	{Soc_Aud_AFE_IO_Block_I2S0, Soc_Aud_AFE_IO_Block_MEM_VUL2, SetI2s0ToVul2}
 };
 
 static const int CONNECTION_LINK_NUM = ARRAY_SIZE(mConnectionLink);

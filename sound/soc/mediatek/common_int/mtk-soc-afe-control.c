@@ -859,14 +859,16 @@ bool Set2ndI2SOut(struct audio_digital_i2s *DigtalI2S)
 {
 	unsigned int u32AudioI2S = 0;
 
-	memcpy((void *)m2ndI2Sout, (void *)DigtalI2S, sizeof(struct audio_digital_i2s));
-	u32AudioI2S = SampleRateTransform(m2ndI2Sout->mI2S_SAMPLERATE, Soc_Aud_Digital_Block_I2S_OUT_2) << 8;
-	u32AudioI2S |= m2ndI2Sout->mLR_SWAP << 31;
-	u32AudioI2S |= m2ndI2Sout->mI2S_HDEN << 12;
-	u32AudioI2S |= m2ndI2Sout->mINV_LRCK << 5;
-	u32AudioI2S |= m2ndI2Sout->mI2S_FMT << 3;
-	u32AudioI2S |= m2ndI2Sout->mI2S_WLEN << 1;
-	Afe_Set_Reg(AFE_I2S_CON3, u32AudioI2S, AFE_MASK_ALL);
+	if (!I2S0_I2S3_4pin_ctrl) {
+		memcpy((void *)m2ndI2Sout, (void *)DigtalI2S, sizeof(struct audio_digital_i2s));
+		u32AudioI2S = SampleRateTransform(m2ndI2Sout->mI2S_SAMPLERATE, Soc_Aud_Digital_Block_I2S_OUT_2) << 8;
+		u32AudioI2S |= m2ndI2Sout->mLR_SWAP << 31;
+		u32AudioI2S |= m2ndI2Sout->mI2S_HDEN << 12;
+		u32AudioI2S |= m2ndI2Sout->mINV_LRCK << 5;
+		u32AudioI2S |= m2ndI2Sout->mI2S_FMT << 3;
+		u32AudioI2S |= m2ndI2Sout->mI2S_WLEN << 1;
+		Afe_Set_Reg(AFE_I2S_CON3, u32AudioI2S, AFE_MASK_ALL);
+	}
 
 	return true;
 }
@@ -874,10 +876,12 @@ bool Set2ndI2SOut(struct audio_digital_i2s *DigtalI2S)
 
 bool Set2ndI2SOutEnable(bool benable)
 {
-	if (benable)
-		Afe_Set_Reg(AFE_I2S_CON3, 0x1, 0x1);
-	else
-		Afe_Set_Reg(AFE_I2S_CON3, 0x0, 0x1);
+	if (!I2S0_I2S3_4pin_ctrl) {
+		if (benable)
+			Afe_Set_Reg(AFE_I2S_CON3, 0x1, 0x1);
+		else
+			Afe_Set_Reg(AFE_I2S_CON3, 0x0, 0x1);
+	}
 
 	return true;
 }

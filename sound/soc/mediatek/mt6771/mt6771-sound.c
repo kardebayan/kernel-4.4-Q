@@ -66,6 +66,11 @@
 #define enable_4G() (false)
 #endif
 
+static int I2S0_I2S3_4pin_enable_counter;
+static int I2S0_I2S3_4pin_sample_rate;
+static int I2S0_I2S3_4pin_wlen;
+int I2S0_I2S3_4pin_ctrl;
+
 static const uint16_t kSideToneCoefficientTable16k[] = {
 	0x049C, 0x09E8, 0x09E0, 0x089C,
 	0xFF54, 0xF488, 0xEAFC, 0xEBAC,
@@ -905,6 +910,7 @@ void Afe_Log_Print(void)
 /* export symbols for other module using */
 EXPORT_SYMBOL(Afe_Log_Print);
 
+#if 0
 void Enable4pin_I2S0_I2S3(unsigned int SampleRate, unsigned int wLenBit)
 {
 	/*wLenBit : 0:Soc_Aud_I2S_WLEN_WLEN_32BITS /1:Soc_Aud_I2S_WLEN_WLEN_16BITS */
@@ -944,6 +950,91 @@ void Enable4pin_I2S0_I2S3(unsigned int SampleRate, unsigned int wLenBit)
 	Afe_Set_Reg(AFE_I2S_CON, 0x1, 0x1); /* Enable I2S0 */
 
 	Afe_Set_Reg(AFE_I2S_CON3, 0x1, 0x1); /* Enable I2S3 */
+}
+#else
+void Enable4pin_I2S0_I2S3(unsigned int SampleRate, bool low_jitter_on, unsigned int wLenBit)
+{
+	unsigned int u32AudioI2sOut = 0;
+	unsigned int u32Audio2ndI2sIn = 0;
+
+	pr_debug("+%s I2S0_I2S3_4pin_enable_counter %d\n", __func__, I2S0_I2S3_4pin_enable_counter);
+	I2S0_I2S3_4pin_enable_counter++;
+	if (I2S0_I2S3_4pin_enable_counter != 1) {
+		if ((SampleRate != I2S0_I2S3_4pin_sample_rate)
+		    || (wLenBit != I2S0_I2S3_4pin_wlen)) {
+			pr_debug("%s, already enabled and the format not match!\n",
+				 __func__);
+			pr_debug("%s, original rate: %u, wlen: %u\n", __func__,
+				I2S0_I2S3_4pin_sample_rate, I2S0_I2S3_4pin_wlen);
+			pr_debug("%s, desired rate: %u, wlen: %u\n", __func__,
+				SampleRate, wLenBit);
+		}
+		return;
+	}
+
+	/* I2S0 clock-gated */
+	Afe_Set_Reg(AUDIO_TOP_CON1, 0x1 << 4,  0x1 << 4);
+
+	/* I2S sample rate Control */
+	SetSampleRate(Soc_Aud_Digital_Block_MEM_I2S, SampleRate);
+
+	/* I2S0 Input Control */
+	SetMemoryPathEnable(Soc_Aud_Digital_Block_I2S_IN_2, true);
+	u32Audio2ndI2sIn |= (Soc_Aud_LR_SWAP_NO_SWAP << 31);
+	u32Audio2ndI2sIn |= (low_jitter_on ? Soc_Aud_LOW_JITTER_CLOCK : Soc_Aud_NORMAL_CLOCK) << 12;
+	u32Audio2ndI2sIn |= (Soc_Aud_I2S_IN_PAD_SEL_I2S_IN_FROM_IO_MUX << 28);
+	u32Audio2ndI2sIn |= (Soc_Aud_INV_LRCK_NO_INVERSE << 5);
+	u32Audio2ndI2sIn |= (Soc_Aud_I2S_FORMAT_I2S << 3);
+	u32Audio2ndI2sIn |= (wLenBit << 1);
+	Afe_Set_Reg(AFE_I2S_CON, u32Audio2ndI2sIn, AFE_MASK_ALL);
+
+	/* I2S3 clock-gated */
+	Afe_Set_Reg(AUDIO_TOP_CON1, 0x1 << 7,  0x1 << 7);
+
+	/* I2S3 Input Control */
+	SetMemoryPathEnable(Soc_Aud_Digital_Block_I2S_OUT_2, true);
+	u32AudioI2sOut = SampleRateTransform(SampleRate, Soc_Aud_Digital_Block_I2S_OUT_2) << 8;
+	u32AudioI2sOut |= Soc_Aud_I2S_FORMAT_I2S << 3;		/* use I2s format */
+	u32AudioI2sOut |= wLenBit << 1;	/* 32 BITS */
+	u32AudioI2sOut |= (low_jitter_on ? Soc_Aud_LOW_JITTER_CLOCK : Soc_Aud_NORMAL_CLOCK) << 12;
+	Afe_Set_Reg(AFE_I2S_CON3, u32AudioI2sOut, AFE_MASK_ALL);	/* set I2S3 configuration */
+
+	/* Clear I2S0 I2S3 clock-gated */
+	Afe_Set_Reg(AUDIO_TOP_CON1, 0 << 4,  0x1 << 4);
+	Afe_Set_Reg(AUDIO_TOP_CON1, 0 << 7,  0x1 << 7);
+
+	udelay(200);
+
+	Afe_Set_Reg(AFE_I2S_CON, 0x1, 0x1);	/* Enable I2S0 */
+	Afe_Set_Reg(AFE_I2S_CON3, 0x1, 0x1);	/* Enable I2S3 */
+
+	pr_debug("%s(), Turn on. AFE_I2S_CON0=0x%x AFE_I2S_CON3=0x%x\n", __func__,
+		Afe_Get_Reg(AFE_I2S_CON), Afe_Get_Reg(AFE_I2S_CON3));
+
+	I2S0_I2S3_4pin_sample_rate = SampleRate;
+	I2S0_I2S3_4pin_wlen = wLenBit;
+
+}
+#endif
+
+void Disable4pin_I2S0_I2S3(void)
+{
+	pr_debug("%s, I2S0_I2S3_4pin_enable_counter %d\n", __func__, I2S0_I2S3_4pin_enable_counter);
+	I2S0_I2S3_4pin_enable_counter--;
+	if (I2S0_I2S3_4pin_enable_counter < 0) {
+		pr_debug("%s, counter < 0\n", __func__);
+		I2S0_I2S3_4pin_enable_counter = 0;
+	}
+
+	if (!I2S0_I2S3_4pin_enable_counter) {
+		SetMemoryPathEnable(Soc_Aud_Digital_Block_I2S_OUT_2, false);
+		SetMemoryPathEnable(Soc_Aud_Digital_Block_I2S_IN_2, false);
+		if (GetMemoryPathEnable(Soc_Aud_Digital_Block_I2S_OUT_2) == false)
+			Afe_Set_Reg(AFE_I2S_CON3, 0x0, 0x1); /* Disable I2S3 */
+
+		if (GetMemoryPathEnable(Soc_Aud_Digital_Block_I2S_IN_2) == false)
+			Afe_Set_Reg(AFE_I2S_CON, 0x0, 0x1); /* Disable I2S0 */
+	}
 }
 
 void SetChipModemPcmConfig(int modem_index, struct audio_digital_pcm p_modem_pcm_attribute)

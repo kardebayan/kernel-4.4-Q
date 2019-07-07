@@ -298,8 +298,6 @@ static int mtk_pcm_I2S0dl1_close(struct snd_pcm_substream *substream)
 
 	if (mPrepareDone == true) {
 		SetIntfConnection(Soc_Aud_InterCon_DisConnect, Soc_Aud_AFE_IO_Block_MEM_DL1,
-				Soc_Aud_AFE_IO_Block_I2S3);
-		SetIntfConnection(Soc_Aud_InterCon_DisConnect, Soc_Aud_AFE_IO_Block_MEM_DL1,
 				Soc_Aud_AFE_IO_Block_I2S1_DAC);
 		SetIntfConnection(Soc_Aud_InterCon_DisConnect, Soc_Aud_AFE_IO_Block_MEM_DL1,
 				Soc_Aud_AFE_IO_Block_I2S1_DAC_2);
@@ -307,11 +305,6 @@ static int mtk_pcm_I2S0dl1_close(struct snd_pcm_substream *substream)
 		SetMemoryPathEnable(Soc_Aud_Digital_Block_I2S_OUT_DAC, false);
 		if (GetI2SDacEnable() == false)
 			SetI2SDacEnable(false);
-		/* stop I2S output */
-		SetMemoryPathEnable(Soc_Aud_Digital_Block_I2S_OUT_2, false);
-
-		if (GetMemoryPathEnable(Soc_Aud_Digital_Block_I2S_OUT_2) == false)
-			Afe_Set_Reg(AFE_I2S_CON3, 0x0, 0x1);
 
 		RemoveMemifSubStream(Soc_Aud_Digital_Block_MEM_DL1, substream);
 
@@ -346,7 +339,6 @@ static int mtk_pcm_I2S0dl1_close(struct snd_pcm_substream *substream)
 static int mtk_pcm_I2S0dl1_prepare(struct snd_pcm_substream *substream)
 {
 	struct snd_pcm_runtime *runtime = substream->runtime;
-	unsigned int u32AudioI2S = 0;
 	bool mI2SWLen;
 
 	pr_warn("%s: mPrepareDone = %d, format = %d, SNDRV_PCM_FORMAT_S32_LE = %d, SNDRV_PCM_FORMAT_U32_LE = %d, sample rate = %d\n",
@@ -364,28 +356,18 @@ static int mtk_pcm_I2S0dl1_prepare(struct snd_pcm_substream *substream)
 			SetMemIfFetchFormatPerSample(Soc_Aud_Digital_Block_MEM_DL1,
 						     AFE_WLEN_32_BIT_ALIGN_8BIT_0_24BIT_DATA);
 			SetConnectionFormat(OUTPUT_DATA_FORMAT_24BIT, Soc_Aud_AFE_IO_Block_I2S1_DAC);
-			SetConnectionFormat(OUTPUT_DATA_FORMAT_24BIT, Soc_Aud_AFE_IO_Block_I2S3);
 			SetConnectionFormat(OUTPUT_DATA_FORMAT_24BIT, Soc_Aud_AFE_IO_Block_I2S1_DAC_2);
 			mI2SWLen = Soc_Aud_I2S_WLEN_WLEN_32BITS;
 		} else {
 			SetMemIfFetchFormatPerSample(Soc_Aud_Digital_Block_MEM_DL1, AFE_WLEN_16_BIT);
 			SetConnectionFormat(OUTPUT_DATA_FORMAT_16BIT, Soc_Aud_AFE_IO_Block_I2S1_DAC);
-			SetConnectionFormat(OUTPUT_DATA_FORMAT_16BIT, Soc_Aud_AFE_IO_Block_I2S3);
 			SetConnectionFormat(OUTPUT_DATA_FORMAT_16BIT, Soc_Aud_AFE_IO_Block_I2S1_DAC_2);
 			mI2SWLen = Soc_Aud_I2S_WLEN_WLEN_16BITS;
 		}
 		SetIntfConnection(Soc_Aud_InterCon_Connection, Soc_Aud_AFE_IO_Block_MEM_DL1,
-				Soc_Aud_AFE_IO_Block_I2S3);
-		SetIntfConnection(Soc_Aud_InterCon_Connection, Soc_Aud_AFE_IO_Block_MEM_DL1,
 				Soc_Aud_AFE_IO_Block_I2S1_DAC);
 		SetIntfConnection(Soc_Aud_InterCon_Connection, Soc_Aud_AFE_IO_Block_MEM_DL1,
 				Soc_Aud_AFE_IO_Block_I2S1_DAC_2);
-
-		/* TODO: KC: use Set2ndI2SOut() to set i2s3 */
-		/* I2S out Setting */
-		u32AudioI2S = SampleRateTransform(runtime->rate, Soc_Aud_Digital_Block_I2S_OUT_2) << 8;
-		u32AudioI2S |= Soc_Aud_I2S_FORMAT_I2S << 3; /* us3 I2s format */
-		u32AudioI2S |= mI2SWLen << 1;
 
 		if (mI2S0dl1_hdoutput_control == true) {
 			pr_warn("%s mI2S0dl1_hdoutput_control == %d\n", __func__,
@@ -406,18 +388,6 @@ static int mtk_pcm_I2S0dl1_prepare(struct snd_pcm_substream *substream)
 			EnableI2SCLKDiv(Soc_Aud_I2S1_MCKDIV, true);
 			EnableI2SCLKDiv(Soc_Aud_I2S3_MCKDIV, true);
 #endif
-			u32AudioI2S |= Soc_Aud_LOW_JITTER_CLOCK << 12; /* Low jitter mode */
-
-		} else {
-			u32AudioI2S &=  ~(Soc_Aud_LOW_JITTER_CLOCK << 12);
-		}
-
-		if (GetMemoryPathEnable(Soc_Aud_Digital_Block_I2S_OUT_2) == false) {
-			SetMemoryPathEnable(Soc_Aud_Digital_Block_I2S_OUT_2, true);
-
-			Afe_Set_Reg(AFE_I2S_CON3, u32AudioI2S | 1, AFE_MASK_ALL);
-		} else {
-			SetMemoryPathEnable(Soc_Aud_Digital_Block_I2S_OUT_2, true);
 		}
 
 		/* start I2S DAC out */
