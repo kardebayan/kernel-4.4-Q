@@ -89,6 +89,7 @@ ifneq ($(strip $(TARGET_NO_KERNEL)),true)
       endif
     endif
 
+    KERNEL_DTB_FILE := $(KERNEL_OUT)/arch/$(KERNEL_TARGET_ARCH)/boot/mtk.dtb
     BUILT_KERNEL_TARGET := $(KERNEL_ZIMAGE_OUT).bin
     INSTALLED_KERNEL_TARGET := $(PRODUCT_OUT)/kernel
     INSTALLED_DTB_OVERLAY_TARGET := $(PRODUCT_OUT)/odmdtbo.img
@@ -103,7 +104,13 @@ ifneq ($(strip $(TARGET_NO_KERNEL)),true)
     KERNEL_MAKE_OPTION := O=$(KERNEL_ROOT_OUT) ARCH=$(KERNEL_TARGET_ARCH) CROSS_COMPILE=$(TARGET_KERNEL_CROSS_COMPILE) $(TARGET_KERNEL_CLANG_COMPILE) ROOTDIR=$(KERNEL_ROOT_DIR) $(if $(strip $(SHOW_COMMANDS)),V=1)
     KERNEL_MAKE_OPTION += MTK_DTBO_FEATURE=$(MTK_DTBO_FEATURE)
     KERNEL_MAKE_OPTION += HOSTCC=/usr/bin/gcc HOSTCXX=/usr/bin/g++
-
+    ifeq ($(KERNEL_TARGET_ARCH),arm64)
+      ifeq ($(strip $(TARGET_KERNEL_USE_CLANG)),true)
+          # for CONFIG_LTO_CLANG to find clang llvm-dis & llvm-ar & LLVMgold.so
+          KERNEL_MAKE_OPTION += LD_LIBRARY_PATH=$(CLANG_PATH)/lib64:$$LD_LIBRARY_PATH
+          KERNEL_MAKE_OPTION += PATH=$(CLANG_PATH)/bin/:$$PATH
+      endif
+    endif
   else
     BUILT_KERNEL_TARGET := $(TARGET_PREBUILT_KERNEL)
   endif#TARGET_PREBUILT_KERNEL is empty
