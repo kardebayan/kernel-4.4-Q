@@ -62,7 +62,7 @@ static volatile bool cmd_done;
 static int32_t g_ccu_sensor_current_fps = -1;
 
 #define SENSOR_NAME_MAX_LEN 32
-static struct ccu_sensor_info g_ccu_sensor_info[IMGSENSOR_SENSOR_IDX_MAX_NUM] = {0};
+static struct ccu_sensor_info g_ccu_sensor_info[IMGSENSOR_SENSOR_IDX_MAX_NUM] = {{0} };
 static char g_ccu_sensor_name[IMGSENSOR_SENSOR_IDX_MAX_NUM][SENSOR_NAME_MAX_LEN];
 
 volatile ccu_mailbox_t *pMailBox[MAX_MAILBOX_NUM];
