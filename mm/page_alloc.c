@@ -3300,7 +3300,7 @@ __alloc_pages_nodemask(gfp_t gfp_mask, unsigned int order,
 	int alloc_flags = ALLOC_WMARK_LOW|ALLOC_CPUSET|ALLOC_FAIR;
 #endif
 #ifdef CONFIG_DMAUSER_PAGES
-	static DEFINE_RATELIMIT_STATE(dmawarn, (180 * HZ), 1);
+	static bool __section(.data.unlikely) __dmawarned;
 #endif
 	gfp_t alloc_mask; /* The gfp_t that was actually used for allocation */
 	struct alloc_context ac = {
@@ -3390,8 +3390,10 @@ out:
 	 * make sure DMA pages cannot be allocated to non-GFP_DMA users
 	 */
 	if (page && !(gfp_mask & GFP_DMA) && (page_zonenum(page) == OPT_ZONE_DMA)) {
-		if (__ratelimit(&dmawarn))
+		if (unlikely(!__dmawarned)) {
+			__dmawarned = true;
 			aee_kernel_warning("large memory", "out of high-end memory");
+		}
 	}
 #endif
 
