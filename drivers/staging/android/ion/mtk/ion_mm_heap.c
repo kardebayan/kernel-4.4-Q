@@ -1033,6 +1033,7 @@ long ion_mm_ioctl(struct ion_client *client, unsigned int cmd, unsigned long arg
 				if (param.config_buffer_param.module_id < 0) {
 					IONMSG("ION_MM_CONFIG_BUFFER module_id error:%d-%d,name %16.s!!!\n",
 					       param.config_buffer_param.module_id, buffer->heap->type, client->name);
+					ion_drv_put_kernel_handle(kernel_handle);
 					return -EFAULT;
 				}
 				if (((buffer_info->MVA == 0) && (param.mm_cmd == ION_MM_CONFIG_BUFFER)) ||
