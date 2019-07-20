@@ -37,6 +37,7 @@ CONFIG_BLK_DEV_BSG,COMMON,,,N,N,N,N,N,N,N,N,N,N
 CONFIG_BLK_DEV_DM,COMMON,,,y,y,y,y,y,y,y,y,y,y
 CONFIG_BLK_DEV_LOOP,COMMON,,,y,y,y,y,y,y,y,y,y,y
 CONFIG_BLK_DEV_MD,PROJECT,pangyen.chen,,,,,,,,,,,
+CONFIG_BLK_DEV_RAM,COMMON,,,y,y,y,y,y,y,y,y,y,y
 CONFIG_BLK_DEV_SD,COMMON,,,y,y,y,y,y,y,y,y,y,y
 CONFIG_BOUNCE,PLATFORM,miles.chen,,N,N,N,N,N,X,X,N,X,N
 CONFIG_BRIDGE,COMMON,,,y,y,y,y,y,y,y,y,y,y
