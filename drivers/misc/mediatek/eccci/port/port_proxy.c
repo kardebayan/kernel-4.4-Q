@@ -984,7 +984,8 @@ static inline int proxy_dispatch_recv_skb(struct port_proxy *proxy_p, int hif_id
 	if (ret < 0 && ret != -CCCI_ERR_PORT_RX_FULL) {
 		if (channel == CCCI_CONTROL_RX)
 			CCCI_ERROR_LOG(md_id, CORE, "drop on channel %d, ret %d\n", channel, ret);
-		ccci_free_skb(skb);
+		if (skb)
+			ccci_free_skb(skb);
 		ret = -CCCI_ERR_DROP_PACKET;
 	}
 
