@@ -2794,10 +2794,16 @@ long rpmb_ioctl_ufs(struct file *file, unsigned int cmd, unsigned long arg)
 
 long rpmb_ioctl_emmc(struct file *file, unsigned int cmd, unsigned long arg)
 {
+#if defined(RPMB_IOCTL_UT) || defined(CONFIG_MICROTRUST_TEE_SUPPORT)
 	int err = 0;
-	struct mmc_card *card = mtk_msdc_host[0]->mmc->card;
-	struct rpmb_ioc_param param;
+#endif
+	struct mmc_card *card;
 	int ret = 0;
+#if defined(RPMB_IOCTL_UT)
+	struct rpmb_ioc_param param;
+	unsigned char *ukey, *udata;
+#endif
+
 #if (defined(CONFIG_MICROTRUST_TEE_SUPPORT))
 	u32 arg_k;
 	u32 rpmb_size = 0;
@@ -2808,12 +2814,66 @@ long rpmb_ioctl_emmc(struct file *file, unsigned int cmd, unsigned long arg)
 	memset(&rpmbinfor, 0, sizeof(struct rpmb_infor));
 #endif
 
-	err = copy_from_user(&param, (void *)arg, sizeof(param));
+	if (!mtk_msdc_host[0] || !mtk_msdc_host[0]->mmc
+		|| !mtk_msdc_host[0]->mmc->card)
+		return -EFAULT;
 
+	card = mtk_msdc_host[0]->mmc->card;
+
+#if defined(RPMB_IOCTL_UT)
+	err = copy_from_user(&param, (void *)arg, sizeof(param));
 	if (err) {
 		MSG(ERR, "%s, copy from user failed: %x\n", __func__, err);
 		return -EFAULT;
 	}
+
+	/* limit R/W arguments : less than RPMB area size
+	 * follow block.c: limit transfer size 128K(don't use
+	 * vmalloc for system performance)
+	 */
+	if ((param.data_len + param.addr * 256)
+		> card->ext_csd.raw_rpmb_size_mult * 128 * 1024 ||
+		param.data_len > RPMB_IOC_MAX_BYTES)
+		return -EINVAL;
+
+	if (!param.key || !param.data)
+		return -EFAULT;
+
+	ukey = param.key;
+	udata = param.data;
+	param.key = kmalloc(32, GFP_KERNEL);
+
+	/* follow block.c :  at least one block(RPMB
+	 * block size is:256) is allocated
+	 */
+	if (param.data_len < RPMB_SZ_DATA)
+		param.data = kmalloc(RPMB_SZ_DATA, GFP_KERNEL);
+	else
+		param.data = kmalloc(param.data_len, GFP_KERNEL);
+	if (param.key) {
+		err = copy_from_user(param.key, ukey, 32);
+		if (err != 0) {
+			MSG(ERR, "%s, err=%x\n", __func__, err);
+			ret = -1;
+			goto end;
+		}
+	} else {
+		ret = -1;
+		goto end;
+	}
+
+	if (param.data) {
+		err = copy_from_user(param.data, udata, param.data_len);
+		if (err != 0) {
+			MSG(ERR, "%s, err=%x\n", __func__, err);
+			ret = -1;
+			goto end;
+		}
+	} else {
+		ret = -1;
+		goto end;
+	}
+#endif
 
 #if (defined(CONFIG_MICROTRUST_TEE_SUPPORT))
 	if ((cmd == RPMB_IOCTL_SOTER_WRITE_DATA) || (cmd == RPMB_IOCTL_SOTER_READ_DATA)) {
@@ -2845,7 +2905,7 @@ long rpmb_ioctl_emmc(struct file *file, unsigned int cmd, unsigned long arg)
 #endif
 
 	switch (cmd) {
-
+#if defined(RPMB_IOCTL_UT)
 	case RPMB_IOCTL_PROGRAM_KEY:
 
 		MSG(INFO, "%s, cmd = RPMB_IOCTL_PROGRAM_KEY!!!!!!!!!!!!!!\n", __func__);
@@ -2876,6 +2936,7 @@ long rpmb_ioctl_emmc(struct file *file, unsigned int cmd, unsigned long arg)
 		ret = rpmb_req_ioctl_write_data_emmc(card, &param);
 
 		break;
+#endif
 
 #if (defined(CONFIG_MICROTRUST_TEE_SUPPORT))
 	case RPMB_IOCTL_SOTER_WRITE_DATA:
@@ -2957,10 +3018,13 @@ long rpmb_ioctl_emmc(struct file *file, unsigned int cmd, unsigned long arg)
 #endif
 	default:
 		MSG(ERR, "%s, wrong ioctl code (%d)!!!\n", __func__, cmd);
-		return -ENOTTY;
+		ret = -ENOTTY;
+		goto end;
 	}
-#if (defined(CONFIG_MICROTRUST_TEE_SUPPORT))
 end:
+#if defined(RPMB_IOCTL_UT)
+	kfree(param.data);
+	kfree(param.key);
 #endif
 	return ret;
 }
