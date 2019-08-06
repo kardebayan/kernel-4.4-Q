@@ -539,7 +539,6 @@ static void fbt_set_down_throttle_locked(int nsec)
 
 	xgf_trace("fpsgo set down_throttle %d", nsec);
 	update_schedplus_down_throttle_ns(EAS_THRES_KIR_FPSGO, nsec);
-	update_schedplus_up_throttle_ns(EAS_THRES_KIR_FPSGO, nsec);
 	down_throttle_ns = nsec;
 }
 
