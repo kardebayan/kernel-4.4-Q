@@ -19,7 +19,7 @@ static struct scp_reserve_mblock scp_reserve_mblock[] = {
 		.num = VOW_MEM_ID,
 		.start_phys = 0x0,
 		.start_virt = 0x0,
-		.size = 0x1DC00,  /* 119 KB */
+		.size = 0x22900,  /* 129KB -> 138KB */
 	},
 	{
 		.num = SENS_MEM_ID,
@@ -66,7 +66,7 @@ static struct scp_reserve_mblock scp_reserve_mblock[] = {
 		.num = VOW_BARGEIN_MEM_ID,
 		.start_phys = 0x0,
 		.start_virt = 0x0,
-		.size = 0x2000,  /* 8 KB */
+		.size = 0x4600,  /* 17KB */
 	},
 #endif
 };

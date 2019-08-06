@@ -97,6 +97,12 @@ struct scp_feature_tb feature_table[NUM_FEATURE_ID] = {
 		.enable      = 0,
 		.sub_feature = 0,
 	},
+	{
+		.feature     = VOW_DUMP_FEATURE_ID,
+		.freq        = 10,
+		.enable      = 0,
+		.sub_feature = 0,
+	},
 };
 
 
