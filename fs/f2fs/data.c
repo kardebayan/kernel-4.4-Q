@@ -1687,9 +1687,14 @@ zero_out:
 	if (bio && (*last_block_in_bio != block_nr - 1 ||
 		!__same_bdev(F2FS_I_SB(inode), block_nr, bio))) {
 submit_and_realloc:
+		f2fs_set_bio_ctx(inode, bio);
 		__f2fs_submit_read_bio(F2FS_I_SB(inode), bio, DATA);
 		bio = NULL;
 	}
+
+	if (f2fs_crypt_bio_not_mergeable(bio, page))
+		goto submit_and_realloc;
+
 	if (bio == NULL) {
 		bio = f2fs_grab_read_bio(inode, block_nr, nr_pages,
 				is_readahead ? REQ_RAHEAD : 0);
@@ -1715,6 +1720,7 @@ submit_and_realloc:
 	goto out;
 confused:
 	if (bio) {
+		f2fs_set_bio_ctx(inode, bio);
 		__f2fs_submit_read_bio(F2FS_I_SB(inode), bio, DATA);
 		bio = NULL;
 	}
@@ -1822,11 +1828,11 @@ static int encrypt_one_page(struct f2fs_io_info *fio)
 	if (!f2fs_encrypted_file(inode))
 		return 0;
 
-	if (fscrypt_is_hw_encrypt(inode))
-		return 0;
-
 	/* wait for GCed page writeback via META_MAPPING */
 	f2fs_wait_on_block_writeback(inode, fio->old_blkaddr);
+
+	if (fscrypt_is_hw_encrypt(inode))
+		return 0;
 
 retry_encrypt:
 	fio->encrypted_page = fscrypt_encrypt_page(inode, fio->page,
