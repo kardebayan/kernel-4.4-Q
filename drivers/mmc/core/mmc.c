@@ -495,6 +495,7 @@ static int mmc_decode_ext_csd(struct mmc_card *card, u8 *ext_csd)
 		 * take into account the value of boot_locked below.
 		 */
 		card->ext_csd.boot_ro_lock = ext_csd[EXT_CSD_BOOT_WP];
+		card->ext_csd.boot_wp_status = ext_csd[EXT_CSD_BOOT_WP_STATUS];
 		card->ext_csd.boot_ro_lockable = true;
 
 		/* Save power class values */
