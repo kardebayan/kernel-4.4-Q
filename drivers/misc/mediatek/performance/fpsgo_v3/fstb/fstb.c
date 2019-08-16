@@ -1361,7 +1361,7 @@ void fpsgo_fbt2fstb_query_fps(int pid, int *target_fps,
 			total_time -= iter->gblock_time;
 		}
 		iter->gblock_time = 0ULL;
-
+		v_c_time = total_time;
 	}
 
 	*target_cpu_time = v_c_time;
