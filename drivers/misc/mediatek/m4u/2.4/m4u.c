@@ -1535,7 +1535,9 @@ static int __m4u_sec_init(void)
 	for (i = 0; i < SMI_LARB_NR; i++)
 		larb_clock_off(i, 1);
 #endif
-	ret = ctx->m4u_msg->rsp;
+	M4ULOG_HIGH("%s ret:0x%x, rsp:0x%x\n",
+			__func__, ret, ctx->m4u_msg->rsp);
+	/* ret = ctx->m4u_msg->rsp; */
 out:
 	m4u_sec_ctx_put(ctx);
 	return ret;
