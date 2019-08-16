@@ -1662,6 +1662,7 @@ static int fbt_boost_policy(
 	t2 = nsec_to_100usec(t2);
 	t_Q2Q = thread_info->Q2Q_time;
 	t_Q2Q = nsec_to_100usec(t_Q2Q);
+
 	if (aa < 0) {
 		mutex_lock(&blc_mlock);
 		if (thread_info->p_blc)
@@ -1987,8 +1988,12 @@ static void fbt_frame_start(struct render_info *thr, unsigned long long ts)
 
 	fpsgo_fbt2fstb_query_fps(thr->pid,
 		&targetfps, &targettime, thr->tgid, thr->mid);
+
 	if (!targetfps)
 		targetfps = TARGET_UNLIMITED_FPS;
+
+	if (!targettime)
+		targettime = FBTCPU_SEC_DIVIDER / targetfps;
 
 	fpsgo_systrace_c_fbt(thr->pid, targetfps, "target_fps");
 	fpsgo_systrace_c_fbt(thr->pid, targettime, "target_time");
