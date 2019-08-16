@@ -886,6 +886,21 @@ static inline int adopt_CAMERA_HW_FeatureControl(void *pBuf)
 		break;
 #endif
 
+	case SENSOR_FEATURE_SET_MCLK_DRIVE_CURRENT:
+	{
+		MUINT32 __current = (*(MUINT32 *)pFeaturePara);
+
+		if (gimgsensor.mclk_set_drive_current != NULL)
+			gimgsensor.mclk_set_drive_current(
+				gimgsensor.hw.pdev[IMGSENSOR_HW_ID_MCLK]->pinstance,
+				pFeatureCtrl->InvokeCamera,
+				__current);
+		else
+			PK_DBG("%s, set drive current by pinctrl was not supported\n",
+			       __func__);
+
+		break;
+	}
 	case SENSOR_FEATURE_SET_I2C_BUF_MODE_EN:
 		ret = imgsensor_i2c_buffer_mode((*(unsigned long long *)pFeaturePara));
 		break;
