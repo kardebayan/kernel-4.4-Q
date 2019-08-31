@@ -56,9 +56,10 @@ int als_data_report(int value, int status)
 		event.word[0] = value;
 		event.status = status;
 		err = sensor_input_event(cxt->als_mdev.minor, &event);
-		if (err < 0)
+		if (err >= 0)
+			last_als_report_data = value;
+		else
 			pr_err_ratelimited("event buffer full, so drop this data\n");
-		last_als_report_data = value;
 	}
 	return err;
 }
