@@ -349,7 +349,7 @@ static void fsm_routine_stop(struct ccci_fsm_ctl *ctl, struct ccci_fsm_command *
 		fsm_routine_zombie(ctl);
 		return;
 	}
-	/* __pm_stay_awake(&ctl->wakelock); */
+	wake_lock(&ctl->wakelock);
 	ctl->last_state = ctl->curr_state;
 	ctl->curr_state = CCCI_FSM_STOPPING;
 	/* 2. pre-stop: polling MD for infinit sleep mode */
@@ -373,7 +373,7 @@ static void fsm_routine_stop(struct ccci_fsm_ctl *ctl, struct ccci_fsm_command *
 		fsm_finish_event(ctl, event);
 	}
 	spin_unlock_irqrestore(&ctl->event_lock, flags);
-	/* __pm_relax(&ctl->wakelock); */
+	wake_unlock(&ctl->wakelock);
 	/* 6. always end in stopped state */
 success:
 	needforcestop = 0;
