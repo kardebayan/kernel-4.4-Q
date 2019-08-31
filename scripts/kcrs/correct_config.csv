@@ -70,6 +70,7 @@ CONFIG_CMA,PROJECT,Miles.Chen,Specific usage,,,,,,,,,,
 CONFIG_CMDLINE,COMMON,,,"console=tty0 console=ttyMT3,921600n1 root=/dev/ram vmalloc=496M slub_max_order=0 slub_debug=O ","console=tty0 console=ttyMT3,921600n1 root=/dev/ram vmalloc=496M slub_max_order=0 slub_debug=O ","console=tty0 console=ttyMT3,921600n1 root=/dev/ram vmalloc=496M slub_max_order=0 slub_debug=O ","console=tty0 console=ttyMT3,921600n1 root=/dev/ram vmalloc=496M slub_max_order=0 slub_debug=O ","console=tty0 console=ttyMT3,921600n1 root=/dev/ram vmalloc=496M slub_max_order=0 slub_debug=O ","console=tty0 console=ttyMT3,921600n1 root=/dev/ram vmalloc=496M slub_max_order=0 slub_debug=O ","console=tty0 console=ttyMT3,921600n1 root=/dev/ram vmalloc=496M slub_max_order=0 slub_debug=O ","console=tty0 console=ttyMT3,921600n1 root=/dev/ram vmalloc=496M slub_max_order=0 slub_debug=O ","console=tty0 console=ttyMT3,921600n1 root=/dev/ram vmalloc=496M slub_max_order=0 slub_debug=O ","console=tty0 console=ttyMT3,921600n1 root=/dev/ram vmalloc=496M slub_max_order=0 slub_debug=O "
 CONFIG_COMPAT,PLATFORM,,,X,y,y,y,y,X,X,y,X,y
 CONFIG_CORE_DUMP_DEFAULT_ELF_HEADERS,COMMON,,,N,N,N,N,N,N,N,N,N,N
+CONFIG_CPU_FREQ_TIMES,COMMON,,,y,y,y,y,y,y,y,y,y,y
 CONFIG_CPU_FREQ_DEFAULT_GOV_INTERACTIVE,,,y,y,y,y,y,N,N,N,N,N
 CONFIG_CROSS_COMPILE,PLATFORM,,,arm-eabi-,aarch64-linux-android-,aarch64-linux-android-,aarch64-linux-android-,aarch64-linux-android-,arm-eabi-,arm-eabi-,aarch64-linux-android-,arm-eabi-,aarch64-linux-android-
 CONFIG_CRYPTO_AES_ARM64_CE_BLK,PLATFORM,Calvin.Liao,,X,y,y,y,y,X,X,y,X,y
