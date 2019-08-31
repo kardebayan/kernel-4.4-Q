@@ -114,13 +114,6 @@ find_and_lock_process_key(const char *prefix,
 		goto invalid;
 	}
 
-#ifdef CONFIG_HIE_DEBUG
-	if (hie_debug(HIE_DBG_FS))
-		pr_info("HIE: %s: prefix:%s ci: %p, master_key:%p, size:%d, mode:%d, min_keysize: %d\n",
-			__func__, prefix, crypt_info, master_key,
-			master_key->size, master_key->mode, min_keysize);
-#endif
-
 	*payload_ret = payload;
 	return key;
 
@@ -150,9 +143,9 @@ static int find_and_derive_key(const struct inode *inode,
 	}
 	if (IS_ERR(key))
 		return PTR_ERR(key);
-	
+
 	crypt_info->ci_keyring_key = key_get(key);
-	
+
 	err = derive_key_aes(payload->raw, ctx, derived_key, derived_keysize);
 	up_read(&key->sem);
 	key_put(key);
