@@ -9775,6 +9775,7 @@ static int active_load_balance_cpu_stop(void *data)
 	}
 	rcu_read_unlock();
 out_unlock:
+	push_task = busiest_rq->push_task;
 	busiest_rq->active_balance = 0;
 
 	if (push_task)
