@@ -170,6 +170,14 @@ bool connectivity_export_is_clk_buf_from_pmic(void)
 	return is_clk_buf_from_pmic();
 }
 EXPORT_SYMBOL(connectivity_export_is_clk_buf_from_pmic);
+
+void connectivity_export_clk_buf_show_status_info(void)
+{
+#if defined(CONFIG_MACH_MT6771)
+	clk_buf_show_status_info();
+#endif
+}
+EXPORT_SYMBOL(connectivity_export_clk_buf_show_status_info);
 #endif
 
 /*******************************************************************************
