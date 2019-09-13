@@ -510,20 +510,29 @@ int hal_btif_dma_rx_cb_reg(P_MTK_DMA_INFO_STR p_dma_info,
 	return 0;
 }
 
+#define BTIF_STOP_DMA_TIME (HZ/100) /* 10ms */
+
 int btif_tx_dma_ctrl(P_MTK_DMA_INFO_STR p_dma_info, ENUM_DMA_CTRL ctrl_id)
 {
 	unsigned int i_ret = -1;
 	unsigned long base = p_dma_info->base;
 	unsigned int dat;
+	unsigned long timeout;
 
 	BTIF_TRC_FUNC();
 	if (ctrl_id == DMA_CTRL_DISABLE) {
 		/*if write 0 to EN bit, DMA will be stopped imediately*/
 		/*if write 1 to STOP bit, DMA will be stopped after current transaction finished*/
 		/*BTIF_CLR_BIT(TX_DMA_EN(base), DMA_EN_BIT);*/
-		BTIF_SET_BIT(TX_DMA_STOP(base), DMA_STOP_BIT);
+		timeout = jiffies + BTIF_STOP_DMA_TIME;
 		do {
-			dat = BTIF_READ32(TX_DMA_STOP(base));
+			if (time_before(jiffies, timeout)) {
+				BTIF_SET_BIT(TX_DMA_STOP(base), DMA_STOP_BIT);
+				dat = BTIF_READ32(TX_DMA_STOP(base));
+			} else {
+				BTIF_ERR_FUNC("******ERROR: BTIF stop dma timeout!******\n");
+				break;
+			}
 		} while (0x1 & dat);
 		BTIF_DBG_FUNC("BTIF Tx DMA disabled,EN(0x%x),STOP(0x%x)\n",
 			BTIF_READ32(TX_DMA_EN(base)), BTIF_READ32(TX_DMA_STOP(base)));
@@ -546,6 +555,7 @@ int btif_rx_dma_ctrl(P_MTK_DMA_INFO_STR p_dma_info, ENUM_DMA_CTRL ctrl_id)
 	unsigned int i_ret = -1;
 	unsigned long base = p_dma_info->base;
 	unsigned int dat;
+	unsigned long timeout;
 
 	BTIF_TRC_FUNC();
 
@@ -553,9 +563,15 @@ int btif_rx_dma_ctrl(P_MTK_DMA_INFO_STR p_dma_info, ENUM_DMA_CTRL ctrl_id)
 		/*if write 0 to EN bit, DMA will be stopped imediately*/
 		/*if write 1 to STOP bit, DMA will be stopped after current transaction finished*/
 		/*BTIF_CLR_BIT(RX_DMA_EN(base), DMA_EN_BIT);*/
-		BTIF_SET_BIT(RX_DMA_STOP(base), DMA_STOP_BIT);
+		timeout = jiffies + BTIF_STOP_DMA_TIME;
 		do {
-			dat = BTIF_READ32(RX_DMA_STOP(base));
+			if (time_before(jiffies, timeout)) {
+				BTIF_SET_BIT(RX_DMA_STOP(base), DMA_STOP_BIT);
+				dat = BTIF_READ32(RX_DMA_STOP(base));
+			} else {
+				BTIF_ERR_FUNC("******ERROR: BTIF stop dma timeout!******\n");
+				break;
+			}
 		} while (0x1 & dat);
 		BTIF_DBG_FUNC("BTIF Rx DMA disabled,EN(0x%x),STOP(0x%x)\n",
 			BTIF_READ32(RX_DMA_EN(base)), BTIF_READ32(RX_DMA_STOP(base)));
@@ -743,7 +759,7 @@ int hal_tx_dma_irq_handler(P_MTK_DMA_INFO_STR p_dma_info)
 			BTIF_ERR_FUNC(
 			     "Tx happened %d times, between %ld.%ld and %ld.%ld\n",
 			     MAX_CONTINIOUS_TIMES, start_timer.tv_sec,
-			     start_timer.tv_usec, end_timer.tv_usec,
+			     start_timer.tv_usec, end_timer.tv_sec,
 			     end_timer.tv_usec);
 		}
 	} else if (vff_len == left_len) {
