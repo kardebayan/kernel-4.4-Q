@@ -2064,7 +2064,7 @@ static int sensorHub_power_up_work(void *data)
 		obj->wp_queue.tail = 0;
 		/* 2. init dram information */
 		obj->SCP_sensorFIFO = (struct sensorFIFO *)(long)scp_get_reserve_mem_virt(SENS_MEM_ID);
-		WARN_ON(obj->SCP_sensorFIFO == NULL);
+		BUG_ON(obj->SCP_sensorFIFO == NULL);
 		obj->SCP_sensorFIFO->wp = 0;
 		obj->SCP_sensorFIFO->rp = 0;
 		obj->SCP_sensorFIFO->FIFOSize =
