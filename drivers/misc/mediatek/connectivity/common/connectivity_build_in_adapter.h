@@ -44,6 +44,7 @@
 	defined(CONFIG_MACH_MT6775) || \
 	defined(CONFIG_MACH_MT6763)
 #define CONNADP_HAS_CLOCK_BUF_CTRL
+#define KERNEL_CLK_BUF_CHIP_NOT_SUPPORT -7788
 #define KERNEL_clk_buf_ctrl connectivity_export_clk_buf_ctrl
 void connectivity_export_clk_buf_ctrl(/*enum clk_buf_id*/ int id, bool onoff);
 #define KERNEL_is_clk_buf_from_pmic connectivity_export_is_clk_buf_from_pmic
@@ -51,6 +52,9 @@ bool connectivity_export_is_clk_buf_from_pmic(void);
 #define KERNEL_clk_buf_show_status_info \
 		connectivity_export_clk_buf_show_status_info
 void connectivity_export_clk_buf_show_status_info(void);
+#define KERNEL_clk_buf_get_xo_en_sta \
+		connectivity_export_clk_buf_get_xo_en_sta
+int connectivity_export_clk_buf_get_xo_en_sta(/*enum xo_id id*/ int id);
 #endif
 
 /*******************************************************************************
