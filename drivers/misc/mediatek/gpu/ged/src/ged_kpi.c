@@ -1478,8 +1478,14 @@ static void ged_kpi_work_cb(struct work_struct *psWork)
 				}
 				ged_kpi_output_gfx_info(psHead->t_gpu_latest, psKPI->gpu_freq * 1000,
 					psKPI->gpu_freq_max * 1000);
-				ged_kpi_output_gfx_info2(psHead->t_gpu_latest, psKPI->gpu_freq * 1000,
-					psKPI->gpu_freq_max * 1000, ulID);
+				if (g_force_gpu_dvfs_fallback) {
+					/* hint FPSGO do not use t_gpu */
+					ged_kpi_output_gfx_info2(-1, psKPI->gpu_freq * 1000,
+						psKPI->gpu_freq_max * 1000, ulID);
+				} else {
+					ged_kpi_output_gfx_info2(psHead->t_gpu_latest, psKPI->gpu_freq * 1000,
+						psKPI->gpu_freq_max * 1000, ulID);
+				}
 				if (psKPI && (psKPI->ulMask & GED_TIMESTAMP_TYPE_S))
 					ged_kpi_statistics_and_remove(psHead, psKPI);
 			} else {
