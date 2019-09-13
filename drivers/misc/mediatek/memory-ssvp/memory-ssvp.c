@@ -45,8 +45,8 @@ static struct task_struct *_svp_online_task; /* NULL */
 static DEFINE_MUTEX(svp_online_task_lock);
 #endif
 
-/* 64 MB alignment */
-#define SSVP_CMA_ALIGN_PAGE_ORDER 14
+/* 16 MB alignment */
+#define SSVP_CMA_ALIGN_PAGE_ORDER 12
 #define SSVP_ALIGN_SHIFT (SSVP_CMA_ALIGN_PAGE_ORDER + PAGE_SHIFT)
 #define SSVP_ALIGN (1 << (PAGE_SHIFT + (MAX_ORDER - 1)))
 
