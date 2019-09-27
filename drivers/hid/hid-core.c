@@ -835,6 +835,42 @@ static int hid_scan_report(struct hid_device *hid)
 		break;
 	}
 
+	/* fall back to generic driver in case specific driver doesn't exist */
+	switch (hid->group) {
+	case HID_GROUP_MULTITOUCH_WIN_8:
+		/* fall-through */
+	case HID_GROUP_MULTITOUCH:
+		if (!IS_ENABLED(CONFIG_HID_MULTITOUCH)) {
+			hid->group = HID_GROUP_GENERIC;
+			hid_warn(hid, "k4.14 change to %u\n", hid->group);
+		}
+		break;
+	case HID_GROUP_SENSOR_HUB:
+		if (!IS_ENABLED(CONFIG_HID_SENSOR_HUB))
+			hid->group = HID_GROUP_GENERIC;
+		break;
+	case HID_GROUP_RMI:
+		if (!IS_ENABLED(CONFIG_HID_RMI))
+			hid->group = HID_GROUP_GENERIC;
+		break;
+	case HID_GROUP_WACOM:
+		if (!IS_ENABLED(CONFIG_HID_WACOM))
+			hid->group = HID_GROUP_GENERIC;
+		break;
+	case HID_GROUP_LOGITECH_DJ_DEVICE:
+		if (!IS_ENABLED(CONFIG_HID_LOGITECH_DJ))
+			hid->group = HID_GROUP_GENERIC;
+		break;
+	}
+
+	if (hid->vendor == 0x248a && hid->group == HID_GROUP_MULTITOUCH) {
+		hid_warn(hid, "scan_report change to GENERIC %u\n", hid->group);
+		hid->group = HID_GROUP_GENERIC;
+	}
+
+	/* fall back to generic driver in case specific driver doesn't exist */
+	hid_warn(hid, "scan_report ->vendor %u , ->group %u\n", hid->vendor, hid->group);
+
 	vfree(parser);
 	return 0;
 }
