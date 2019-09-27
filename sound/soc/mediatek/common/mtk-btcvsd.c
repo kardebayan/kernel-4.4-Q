@@ -503,6 +503,10 @@ static irqreturn_t mtk_btcvsd_snd_irq_handler(int irq_id, void *dev)
 	struct mtk_btcvsd_snd *bt = dev;
 	unsigned int packet_type, packet_num, packet_length;
 	unsigned int buf_cnt_tx, buf_cnt_rx, control;
+	static DEFINE_RATELIMIT_STATE(_rs, 2 * HZ, 1);
+
+	if (__ratelimit(&_rs))
+		dev_info(bt->dev, "%s(), irq_id=%d\n", __func__, irq_id);
 
 	if (bt->rx->state != BT_SCO_STATE_RUNNING &&
 	    bt->rx->state != BT_SCO_STATE_ENDING &&
