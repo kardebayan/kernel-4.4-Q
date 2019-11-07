@@ -128,6 +128,7 @@ struct mtk_btcvsd_snd {
 	u32 *bt_reg_ctl;
 
 	unsigned int irq_disabled:1;
+	unsigned int bypass_bt_access:1;
 
 	spinlock_t tx_lock;	/* spinlock for bt tx stream control */
 	spinlock_t rx_lock;	/* spinlock for bt rx stream control */
@@ -342,6 +343,9 @@ static int btcvsd_tx_clean_buffer(struct mtk_btcvsd_snd *bt)
 	unsigned long flags;
 	enum BT_SCO_BAND band = bt->band;
 
+	if (bt->bypass_bt_access)
+		return -EIO;
+
 	/* prepare encoded mute data */
 	if (band == BT_SCO_NB)
 		memset(bt->tx->temp_packet_buf, 170, SCO_PACKET_180);
@@ -387,6 +391,9 @@ static int mtk_btcvsd_read_from_bt(struct mtk_btcvsd_snd *bt,
 	unsigned int packet_buf_ofs;
 	unsigned long flags;
 	unsigned long connsys_addr_rx, ap_addr_rx;
+
+	if (bt->bypass_bt_access)
+		return -EIO;
 
 	connsys_addr_rx = *bt->bt_reg_pkt_r;
 	ap_addr_rx = (unsigned long)bt->bt_sram_bank2_base +
@@ -438,6 +445,9 @@ int mtk_btcvsd_write_to_bt(struct mtk_btcvsd_snd *bt,
 	u8 *dst;
 	unsigned long connsys_addr_tx, ap_addr_tx;
 	bool new_ap_addr_tx = true;
+
+	if (bt->bypass_bt_access)
+		return -EIO;
 
 	connsys_addr_tx = *bt->bt_reg_pkt_w;
 	ap_addr_tx = (unsigned long)bt->bt_sram_bank2_base +
@@ -507,6 +517,9 @@ static irqreturn_t mtk_btcvsd_snd_irq_handler(int irq_id, void *dev)
 
 	if (__ratelimit(&_rs))
 		dev_info(bt->dev, "%s(), irq_id=%d\n", __func__, irq_id);
+
+	if (bt->bypass_bt_access)
+		goto irq_handler_exit;
 
 	if (bt->rx->state != BT_SCO_STATE_RUNNING &&
 	    bt->rx->state != BT_SCO_STATE_ENDING &&
@@ -1077,6 +1090,28 @@ static int btcvsd_band_set(struct snd_kcontrol *kcontrol,
 	return 0;
 }
 
+static int btcvsd_bypass_get(struct snd_kcontrol *kcontrol,
+			     struct snd_ctl_elem_value *ucontrol)
+{
+	struct snd_soc_component *cmpnt = snd_soc_kcontrol_component(kcontrol);
+	struct mtk_btcvsd_snd *bt = snd_soc_component_get_drvdata(cmpnt);
+
+	ucontrol->value.integer.value[0] = bt->bypass_bt_access;
+	return 0;
+}
+
+static int btcvsd_bypass_set(struct snd_kcontrol *kcontrol,
+			     struct snd_ctl_elem_value *ucontrol)
+{
+	struct snd_soc_component *cmpnt = snd_soc_kcontrol_component(kcontrol);
+	struct mtk_btcvsd_snd *bt = snd_soc_component_get_drvdata(cmpnt);
+
+	bt->bypass_bt_access = ucontrol->value.integer.value[0];
+	dev_dbg(bt->dev, "%s(), bypass_bt_access %d\n",
+		__func__, bt->bypass_bt_access);
+	return 0;
+}
+
 static int btcvsd_tx_mute_get(struct snd_kcontrol *kcontrol,
 			      struct snd_ctl_elem_value *ucontrol)
 {
@@ -1206,6 +1241,8 @@ static int btcvsd_tx_timestamp_get(unsigned int __user *data, unsigned int size)
 static const struct snd_kcontrol_new mtk_btcvsd_snd_controls[] = {
 	SOC_ENUM_EXT("BTCVSD Band", btcvsd_enum[0],
 		     btcvsd_band_get, btcvsd_band_set),
+	SOC_SINGLE_BOOL_EXT("BTCVSD Bypass Switch", 0,
+			    btcvsd_bypass_get, btcvsd_bypass_set),
 	SOC_SINGLE_BOOL_EXT("BTCVSD Tx Mute Switch", 0,
 			    btcvsd_tx_mute_get, btcvsd_tx_mute_set),
 	SOC_SINGLE_BOOL_EXT("BTCVSD Tx Irq Received Switch", 0,
