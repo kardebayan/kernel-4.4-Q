@@ -887,6 +887,8 @@ static void cmdq_core_copy_v3_struct(struct TaskStruct *pTask, struct cmdqComman
 		pCommandDesc->replace_instr.number >= CMDQ_MAX_COMMAND_SIZE) {
 		pTask->replace_instr.position = (cmdqU32Ptr_t) (unsigned long)NULL;
 		pTask->replace_instr.number = 0;
+		if (pCommandDesc->replace_instr.number >= CMDQ_MAX_COMMAND_SIZE)
+			CMDQ_LOG("Invalid replace_instr.number...\n");
 		return;
 	}
 
