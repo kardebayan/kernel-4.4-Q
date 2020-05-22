@@ -30,6 +30,8 @@ static u32 mdp_base[] = {
 	0x14016000,
 	0x15020000,
 	0x15022000,
+	0x1502a000,
+	0x1502d000,
 };
 
 static u32 mdp_sub_base[] = {
@@ -46,6 +48,8 @@ static u32 mdp_sub_base[] = {
 	0x6002,
 	0x0004,
 	0x2004,
+	0xa004,
+	0xd004,
 };
 
 #endif
