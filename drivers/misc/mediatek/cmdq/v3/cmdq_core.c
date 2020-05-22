@@ -902,7 +902,15 @@ static void cmdq_core_copy_v3_struct(struct TaskStruct *pTask, struct cmdqComman
 		pTask->replace_instr.number = 0;
 		return;
 	}
-	memcpy(p_instr_position, CMDQ_U32_PTR(pCommandDesc->replace_instr.position), array_num);
+
+	if (copy_from_user((void *)(unsigned long)p_instr_position,
+			CMDQ_U32_PTR(pCommandDesc->replace_instr.position), array_num)) {
+		kfree(p_instr_position);
+		pTask->replace_instr.position = (cmdqU32Ptr_t)(unsigned long)NULL;
+		pTask->replace_instr.number = 0;
+		return;
+	}
+
 	pTask->replace_instr.position = (cmdqU32Ptr_t) (unsigned long)p_instr_position;
 }
 
@@ -3864,9 +3872,16 @@ static struct TaskStruct *cmdq_core_acquire_task(
 		if (pCommandDesc->prop_size && pCommandDesc->prop_addr &&
 			pCommandDesc->prop_size < CMDQ_MAX_USER_PROP_SIZE) {
 			pTask->prop_addr = kzalloc(pCommandDesc->prop_size, GFP_KERNEL);
-			memcpy(pTask->prop_addr, (void *)CMDQ_U32_PTR(pCommandDesc->prop_addr),
-				pCommandDesc->prop_size);
-			pTask->prop_size = pCommandDesc->prop_size;
+
+			if (copy_from_user(pTask->prop_addr,
+					   (void *)CMDQ_U32_PTR(pCommandDesc->prop_addr),
+					   pCommandDesc->prop_size)) {
+				kfree(pTask->prop_addr);
+				pTask->prop_addr = NULL;
+				pTask->prop_size = 0;
+			} else
+				pTask->prop_size = pCommandDesc->prop_size;
+
 		} else {
 			pTask->prop_addr = NULL;
 			pTask->prop_size = 0;
