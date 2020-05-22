@@ -335,11 +335,12 @@ static void cmdq_driver_process_read_address_request(struct cmdqReadAddressStruc
 
 static long cmdq_driver_destroy_secure_medadata(struct cmdqCommandStruct *pCommand)
 {
+#ifdef CMDQ_SECURE_PATH_SUPPORT
 	if (pCommand->secData.addrMetadatas) {
 		kfree(CMDQ_U32_PTR(pCommand->secData.addrMetadatas));
 		pCommand->secData.addrMetadatas = (cmdqU32Ptr_t) (unsigned long)NULL;
 	}
-
+#endif
 	return 0;
 }
 
